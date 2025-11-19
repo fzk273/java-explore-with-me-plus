@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS endpoint_hits (
+    id BIGSERIAL PRIMARY KEY,
+    app VARCHAR(255) NOT NULL,
+    uri VARCHAR(512) NOT NULL,
+    ip VARCHAR(50)  NOT NULL,
+    hit_timestamp TIMESTAMP  NOT NULL
+);
