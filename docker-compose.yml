@@ -1,8 +1,8 @@
 services:
   stats-server:
     build: ./statistic/statistic-server
-    image: statistic-server
-    container_name: statistic-server
+    image: stats-server
+    container_name: stats-server
     ports:
       - "9090:9090"
     depends_on:
@@ -23,11 +23,9 @@ services:
       - POSTGRES_PASSWORD=stats
 
   ewm-service:
-    build:
-      context: ./main-service
-      dockerfile: Dockerfile
-    image: main-service
-    container_name: main-service
+    build: ./main-service
+    image: ewm-server
+    container_name: ewm-server
     ports:
       - "8080:8080"
     depends_on:
