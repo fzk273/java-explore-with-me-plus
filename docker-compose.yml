@@ -1,7 +1,6 @@
 services:
   stats-server:
     build: ./statistic/statistic-server
-    image: ewm-statistic-server
     container_name: ewm-statistic-server
     ports:
       - "9090:9090"
@@ -11,8 +10,7 @@ services:
 
   ewm-service:
     build: ./main-service
-    image: ewm-server
-    container_name: ewm-server
+    container_name: ewm-main-service
     ports:
       - "8080:8080"
 
