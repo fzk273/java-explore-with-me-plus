@@ -1,18 +1,20 @@
 services:
   stats-server:
-    build: ./statistic/statistic-server
-    container_name: ewm-statistic-server
+    build: statistic/statistic-server
+    image: statistic-server
+    container_name: statistic-server
     ports:
       - "9090:9090"
 
-#  stats-db:
-#    image: postgres:16.1
+  stats-db:
+    image: postgres:16.1
 
   ewm-service:
-    build: ./main-service
-    container_name: ewm-main-service
+    build: main-service
+    image: main-service
+    container_name: main-service
     ports:
       - "8080:8080"
 
-#  ewm-db:
-#    image: postgres:16.1
+  ewm-db:
+    image: postgres:16.1
