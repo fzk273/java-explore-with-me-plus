@@ -1,6 +1,6 @@
 services:
   stats-server:
-    build: statistic/statistic-server
+    build: ./statistic/statistic-server
     image: statistic-server
     container_name: statistic-server
     ports:
@@ -23,7 +23,9 @@ services:
       - POSTGRES_PASSWORD=stats
 
   ewm-service:
-    build: main-service
+    build:
+      context: ./main-service
+      dockerfile: Dockerfile
     image: main-service
     container_name: main-service
     ports:
