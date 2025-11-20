@@ -24,6 +24,7 @@
 
     <modules>
         <module>statistic</module>
+        <module>main-service</module>
     </modules>
 
 	<build>
