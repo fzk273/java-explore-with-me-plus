@@ -23,7 +23,7 @@
 	</properties>
 
     <modules>
-        <module>statistic</module>
+        <module>stat</module>
         <module>main-service</module>
     </modules>
 
