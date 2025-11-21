@@ -31,6 +31,7 @@ public class StatsService {
     }
 
     public List<ViewStats> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
+
         List<StatsRepository.StatsProjection> results;
 
         if (Boolean.TRUE.equals(unique)) {
@@ -40,11 +41,7 @@ public class StatsService {
         }
 
         return results.stream()
-                .map(projection -> new ViewStats(
-                        projection.getApp(),
-                        projection.getUri(),
-                        projection.getHits()
-                ))
-                .collect(Collectors.toList());
+                .map(p -> new ViewStats(p.getApp(), p.getUri(), p.getHits()))
+                .toList();
     }
 }
