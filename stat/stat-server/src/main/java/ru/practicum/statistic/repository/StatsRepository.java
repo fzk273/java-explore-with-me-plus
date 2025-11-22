@@ -11,11 +11,11 @@ import java.util.List;
 public interface StatsRepository extends JpaRepository<EndpointHit, Long> {
 
     @Query(value = """
-            SELECT app, uri, COUNT(id) AS hits
-            FROM endpoint_hits
-            WHERE hit_timestamp BETWEEN :start AND :end
-              AND (:uris IS NULL OR uri IN (:uris))
-            GROUP BY app, uri
+            SELECT eh.app AS app, eh.uri AS uri, COUNT(eh.id) AS hits
+            FROM endpoint_hits eh
+            WHERE eh.hit_timestamp BETWEEN :start AND :end
+              AND (:uris IS NULL OR eh.uri IN :uris)
+            GROUP BY eh.app, eh.uri
             ORDER BY hits DESC
             """, nativeQuery = true)
     List<StatsProjection> findStatsNative(@Param("start") LocalDateTime start,
@@ -23,11 +23,11 @@ public interface StatsRepository extends JpaRepository<EndpointHit, Long> {
                                           @Param("uris") List<String> uris);
 
     @Query(value = """
-            SELECT app, uri, COUNT(DISTINCT ip) AS hits
-            FROM endpoint_hits
-            WHERE hit_timestamp BETWEEN :start AND :end
-              AND (:uris IS NULL OR uri IN (:uris))
-            GROUP BY app, uri
+            SELECT eh.app AS app, eh.uri AS uri, COUNT(DISTINCT eh.ip) AS hits
+            FROM endpoint_hits eh
+            WHERE eh.hit_timestamp BETWEEN :start AND :end
+              AND (:uris IS NULL OR eh.uri IN :uris)
+            GROUP BY eh.app, eh.uri
             ORDER BY hits DESC
             """, nativeQuery = true)
     List<StatsProjection> findUniqueStatsNative(@Param("start") LocalDateTime start,
@@ -36,9 +36,7 @@ public interface StatsRepository extends JpaRepository<EndpointHit, Long> {
 
     interface StatsProjection {
         String getApp();
-
         String getUri();
-
         Long getHits();
     }
 }

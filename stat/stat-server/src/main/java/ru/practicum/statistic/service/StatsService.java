@@ -9,6 +9,7 @@ import ru.practicum.statistic.model.EndpointHit;
 import ru.practicum.statistic.repository.StatsRepository;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -30,13 +31,17 @@ public class StatsService {
     }
 
     public List<ViewStats> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, Boolean unique) {
+        // Валидация дат
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("Start date must be before end date");
+        }
 
         List<StatsRepository.StatsProjection> results;
 
         if (Boolean.TRUE.equals(unique)) {
-            results = statsRepository.findUniqueStatsNative(start, end, uris);
+            results = statsRepository.findUniqueStatsNative(start, end, uris != null ? uris : Collections.emptyList());
         } else {
-            results = statsRepository.findStatsNative(start, end, uris);
+            results = statsRepository.findStatsNative(start, end, uris != null ? uris : Collections.emptyList());
         }
 
         return results.stream()
