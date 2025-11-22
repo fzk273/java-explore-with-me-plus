@@ -22,6 +22,7 @@ public interface StatsRepository extends JpaRepository<EndpointHit, Long> {
                                           @Param("end") LocalDateTime end,
                                           @Param("uris") List<String> uris);
 
+
     @Query(value = """
             SELECT eh.app AS app, eh.uri AS uri, COUNT(DISTINCT eh.ip) AS hits
             FROM endpoint_hits eh
@@ -36,7 +37,9 @@ public interface StatsRepository extends JpaRepository<EndpointHit, Long> {
 
     interface StatsProjection {
         String getApp();
+
         String getUri();
+
         Long getHits();
     }
 }
