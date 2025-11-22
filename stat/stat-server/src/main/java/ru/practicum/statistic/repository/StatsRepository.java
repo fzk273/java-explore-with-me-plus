@@ -36,7 +36,9 @@ public interface StatsRepository extends JpaRepository<EndpointHit, Long> {
 
     interface StatsProjection {
         String getApp();
+
         String getUri();
+
         Long getHits();
     }
 }
