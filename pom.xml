@@ -5,6 +5,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 
+	<!-- FIX: Стабильная версия Spring Boot вместо 3.3.0 -->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
@@ -13,7 +14,6 @@
 	</parent>
 
 	<name>Explore With Me</name>
-
 	<groupId>ru.practicum</groupId>
 	<artifactId>explore-with-me</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -37,14 +37,16 @@
         <apt-maven-plugin.version>1.1.3</apt-maven-plugin.version>
 	</properties>
 
-    <modules>
-        <module>stat</module>
-        <module>main-service</module>
-    </modules>
+	<modules>
+		<module>stat</module>
+		<module>main-service</module>
+	</modules>
 
 	<build>
 		<pluginManagement>
 			<plugins>
+
+				<!-- Активный профиль тестов -->
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
@@ -54,6 +56,8 @@
 						</systemPropertyVariables>
 					</configuration>
 				</plugin>
+
+				<!-- Checkstyle -->
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-checkstyle-plugin</artifactId>
@@ -80,6 +84,8 @@
 						</dependency>
 					</dependencies>
 				</plugin>
+
+				<!-- Spotbugs -->
 				<plugin>
 					<groupId>com.github.spotbugs</groupId>
 					<artifactId>spotbugs-maven-plugin</artifactId>
@@ -96,6 +102,8 @@
 						</execution>
 					</executions>
 				</plugin>
+
+				<!-- Jacoco -->
 				<plugin>
 					<groupId>org.jacoco</groupId>
 					<artifactId>jacoco-maven-plugin</artifactId>
@@ -155,6 +163,7 @@
 								</rules>
 							</configuration>
 						</execution>
+
 						<execution>
 							<id>jacoco-site</id>
 							<phase>install</phase>
@@ -164,10 +173,13 @@
 						</execution>
 					</executions>
 				</plugin>
+
 			</plugins>
 		</pluginManagement>
 	</build>
+
 	<profiles>
+
 		<profile>
 			<id>check</id>
 			<build>
@@ -191,6 +203,7 @@
 				</plugins>
 			</reporting>
 		</profile>
+
 		<profile>
 			<id>coverage</id>
 			<build>
@@ -202,6 +215,7 @@
 				</plugins>
 			</build>
 		</profile>
+
 	</profiles>
 
 </project>
