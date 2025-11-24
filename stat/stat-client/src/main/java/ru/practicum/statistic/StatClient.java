@@ -89,7 +89,7 @@ public class StatClient {
         String uriWithParams = UriComponentsBuilder.newInstance()
                 .scheme(SCHEME)
                 .host(serverUrl)
-                .port(9090)
+                .port(port)
                 .path("/stats")
                 .queryParam("uris", urisCsv)
                 .queryParam("unique", unique)
