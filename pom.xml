@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
 	<modelVersion>4.0.0</modelVersion>
 
+	<!-- FIX: Стабильная версия Spring Boot вместо 3.3.0 -->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.3.0</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<version>3.2.5</version>
+		<relativePath/>
 	</parent>
 
 	<name>Explore With Me</name>
-
 	<groupId>ru.practicum</groupId>
 	<artifactId>explore-with-me</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -19,12 +21,32 @@
 
 	<properties>
 		<java.version>21</java.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <lombok.version>1.18.40</lombok.version>
+        <org.apache.maven.plugins.version>3.11.0</org.apache.maven.plugins.version>
+        <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
+        <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
+        <spotbugs-maven-plugin.version>4.8.5.0</spotbugs-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
+        <checkstyle.version>10.3</checkstyle.version>
+        <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
+        <lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
+        <jakarta.version>5.1.0</jakarta.version>
+        <apt-maven-plugin.version>1.1.3</apt-maven-plugin.version>
 	</properties>
+
+	<modules>
+		<module>stat</module>
+		<module>main-service</module>
+	</modules>
 
 	<build>
 		<pluginManagement>
 			<plugins>
+
+				<!-- Активный профиль тестов -->
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
@@ -34,10 +56,12 @@
 						</systemPropertyVariables>
 					</configuration>
 				</plugin>
+
+				<!-- Checkstyle -->
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-checkstyle-plugin</artifactId>
-					<version>3.1.2</version>
+					<version>${maven-checkstyle-plugin.version}</version>
 					<configuration>
 						<configLocation>checkstyle.xml</configLocation>
 						<failOnViolation>true</failOnViolation>
@@ -56,14 +80,16 @@
 						<dependency>
 							<groupId>com.puppycrawl.tools</groupId>
 							<artifactId>checkstyle</artifactId>
-							<version>10.3</version>
+							<version>${checkstyle.version}</version>
 						</dependency>
 					</dependencies>
 				</plugin>
+
+				<!-- Spotbugs -->
 				<plugin>
 					<groupId>com.github.spotbugs</groupId>
 					<artifactId>spotbugs-maven-plugin</artifactId>
-					<version>4.8.5.0</version>
+					<version>${spotbugs-maven-plugin.version}</version>
 					<configuration>
 						<effort>Max</effort>
 						<threshold>High</threshold>
@@ -76,10 +102,12 @@
 						</execution>
 					</executions>
 				</plugin>
+
+				<!-- Jacoco -->
 				<plugin>
 					<groupId>org.jacoco</groupId>
 					<artifactId>jacoco-maven-plugin</artifactId>
-					<version>0.8.12</version>
+					<version>${jacoco-maven-plugin.version}</version>
 					<configuration>
 						<output>file</output>
 					</configuration>
@@ -135,6 +163,7 @@
 								</rules>
 							</configuration>
 						</execution>
+
 						<execution>
 							<id>jacoco-site</id>
 							<phase>install</phase>
@@ -144,10 +173,13 @@
 						</execution>
 					</executions>
 				</plugin>
+
 			</plugins>
 		</pluginManagement>
 	</build>
+
 	<profiles>
+
 		<profile>
 			<id>check</id>
 			<build>
@@ -171,6 +203,7 @@
 				</plugins>
 			</reporting>
 		</profile>
+
 		<profile>
 			<id>coverage</id>
 			<build>
@@ -182,6 +215,7 @@
 				</plugins>
 			</build>
 		</profile>
+
 	</profiles>
 
 </project>
