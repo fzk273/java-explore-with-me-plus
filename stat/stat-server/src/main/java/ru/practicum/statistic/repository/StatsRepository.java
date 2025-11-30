@@ -1,5 +1,5 @@
 package ru.practicum.statistic.repository;
-
+//чтобы видело какие-нибудь изменения
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
