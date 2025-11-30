@@ -1,5 +1,4 @@
-// main-service/src/main/java/ru/practicum/category/controller/admin/CategoryAdminController.java
-package ru.practicum.category.controller;
+package ru.practicum.category.controller.admin;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

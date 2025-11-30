@@ -1,10 +1,9 @@
-// main-service/src/main/java/ru/practicum/category/controller/public/CategoryPublicController.java
-package ru.practicum.category.controller;
+package ru.practicum.category.controller.pub;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-        import ru.practicum.category.dto.CategoryDto;
+import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.service.CategoryService;
 
 import java.util.List;

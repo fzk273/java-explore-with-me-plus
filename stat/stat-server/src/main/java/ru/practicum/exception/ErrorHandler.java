@@ -1,4 +1,3 @@
-// main-service/src/main/java/ru/practicum/exception/ErrorHandler.java
 package ru.practicum.exception;
 
 import jakarta.validation.ConstraintViolationException;
