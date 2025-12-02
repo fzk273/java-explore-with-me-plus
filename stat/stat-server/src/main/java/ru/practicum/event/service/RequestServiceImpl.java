@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.category.repository.CategoryRepository;
 import ru.practicum.event.dto.ParticipationRequestDto;
 import ru.practicum.event.dto.RequestStatusUpdateRequest;
 import ru.practicum.event.dto.RequestStatusUpdateResult;
