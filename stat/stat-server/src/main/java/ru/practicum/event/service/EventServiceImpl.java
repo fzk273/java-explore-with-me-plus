@@ -21,7 +21,6 @@ import ru.practicum.exception.NotFoundException;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 import ru.practicum.user.dto.UserShortDto;
-import ru.practicum.statistic.StatClient;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,7 +36,7 @@ public class EventServiceImpl implements EventService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final ParticipationRequestRepository requestRepository;
-    private final StatClient statClient;
+    // private final StatClient statClient; // Временно закомментировано
 
     @Override
     @Transactional
@@ -113,10 +112,10 @@ public class EventServiceImpl implements EventService {
             throw new BadRequestException("Participant limit cannot be negative");
         }
 
-        // Проверка даты события - ИЗМЕНИТЬ ConflictException на BadRequestException
+        // Проверка даты события
         if (updateEvent.getEventDate() != null) {
             if (updateEvent.getEventDate().isBefore(LocalDateTime.now())) {
-                throw new BadRequestException("Дата события не может быть в прошлом");  // Было ConflictException
+                throw new BadRequestException("Дата события не может быть в прошлом");
             }
         }
 
@@ -236,13 +235,14 @@ public class EventServiceImpl implements EventService {
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable, pageable);
 
         // Отправляем статистику о запросе (для аналитики)
-        if (request != null) {
-            try {
-                statClient.hit(request);
-            } catch (Exception e) {
-                log.error("Ошибка при отправке статистики: {}", e.getMessage());
-            }
-        }
+        // Временно закомментировано
+        // if (request != null) {
+        //     try {
+        //         statClient.hit(request);
+        //     } catch (Exception e) {
+        //         log.error("Ошибка при отправке статистики: {}", e.getMessage());
+        //     }
+        // }
 
         return events.stream()
                 .map(this::toEventShortDto)
@@ -267,13 +267,14 @@ public class EventServiceImpl implements EventService {
         log.info("Событие с id={} просмотрено. Количество просмотров: {}", id, savedEvent.getViews());
 
         // Отправляем статистику о просмотре (для аналитики, но не для подсчета views)
-        if (request != null) {
-            try {
-                statClient.hit(request);
-            } catch (Exception e) {
-                log.error("Ошибка при отправке статистики: {}", e.getMessage());
-            }
-        }
+        // Временно закомментировано
+        // if (request != null) {
+        //     try {
+        //         statClient.hit(request);
+        //     } catch (Exception e) {
+        //         log.error("Ошибка при отправке статистики: {}", e.getMessage());
+        //     }
+        // }
 
         return toEventFullDto(savedEvent);
     }
