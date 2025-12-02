@@ -16,6 +16,15 @@ import ru.practicum.user.mapper.UserMapper;
 import java.time.LocalDateTime;
 
 public class EventMapper {
+    private final CategoryMapper categoryMapper;
+    private final UserMapper userMapper;
+
+    public EventMapper(CategoryMapper categoryMapper, UserMapper userMapper) {
+        this.categoryMapper = categoryMapper;
+        this.userMapper = userMapper;
+    }
+
+
     public Event mapToEvent(NewEventDto newEventDto, User user, Category category) {
         Event event = new Event();
 
@@ -43,13 +52,13 @@ public class EventMapper {
         EventFullDto fullDto = new EventFullDto();
 
         fullDto.setAnnotation(event.getAnnotation());
-        fullDto.setCategory(CategoryMapper.toCategoryDto(event.getCategory()));
+        fullDto.setCategory(categoryMapper.toCategoryDto(event.getCategory()));
         fullDto.setConfirmedRequests(event.getConfirmedRequests() != null ? event.getConfirmedRequests() : 0L);
         fullDto.setCreatedOn(event.getCreatedOn());
         fullDto.setDescription(event.getDescription());
         fullDto.setEventDate(event.getEventDate());
         fullDto.setId(event.getId());
-        fullDto.setInitiator(UserMapper.toUserShortDto(event.getInitiator()));
+        fullDto.setInitiator(userMapper.toUserShortDto(event.getInitiator()));
         fullDto.setLocation(location);
         fullDto.setPaid(event.getPaid() != null ? event.getPaid() : false);
         fullDto.setParticipantLimit(event.getParticipantLimit() != null ? event.getParticipantLimit() : 0L);
@@ -66,11 +75,11 @@ public class EventMapper {
         EventShortDto shortDto = new EventShortDto();
 
         shortDto.setAnnotation(event.getAnnotation());
-        shortDto.setCategory(CategoryMapper.toCategoryDto(event.getCategory()));
+        shortDto.setCategory(categoryMapper.toCategoryDto(event.getCategory()));
         shortDto.setConfirmedRequests(event.getConfirmedRequests() != null ? event.getConfirmedRequests() : 0L);
         shortDto.setEventDate(event.getEventDate());
         shortDto.setId(event.getId());
-        shortDto.setInitiator(UserMapper.toUserShortDto(event.getInitiator()));
+        shortDto.setInitiator(userMapper.toUserShortDto(event.getInitiator()));
         shortDto.setPaid(event.getPaid() != null ? event.getPaid() : false);
         shortDto.setTitle(event.getTitle());
         shortDto.setViews(event.getViews() != null ? event.getViews() : 0L);
