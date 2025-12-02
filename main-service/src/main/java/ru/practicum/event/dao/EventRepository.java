@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -24,4 +25,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     boolean existsByCategoryId(Long categoryId);
 
     boolean existsByIdAndInitiatorId(Long eventId, Long userId);
+
+    List<Event> findAllByInitiatorId(Long userId);
+
+    Optional<Event> findByIdAndInitiator_Id(Long eventId, Long userId);
 }
