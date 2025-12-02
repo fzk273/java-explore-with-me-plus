@@ -58,4 +58,6 @@ public interface ParticipationRequestRepository extends JpaRepository<Participat
             "AND pr.event.id = :eventId")
     boolean existsByRequesterIdAndEventId(@Param("requesterId") Long requesterId,
                                           @Param("eventId") Long eventId);
+
+
 }

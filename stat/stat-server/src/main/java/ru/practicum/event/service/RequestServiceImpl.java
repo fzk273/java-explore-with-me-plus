@@ -38,7 +38,6 @@ public class RequestServiceImpl implements RequestService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден"));
 
-        // Используем метод с JOIN FETCH вместо обычного findById
         Event event = eventRepository.findByIdWithCategoryAndInitiator(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id=" + eventId + " не найдено"));
 
@@ -60,6 +59,14 @@ public class RequestServiceImpl implements RequestService {
         // Проверка: повторная заявка
         if (requestRepository.existsByRequesterIdAndEventId(userId, eventId)) {
             throw new ConflictException("Заявка на участие уже существует");
+        }
+
+        // Проверка: лимит участников (ВОТ ЭТО ДОБАВИТЬ)
+        if (event.getParticipantLimit() > 0) {
+            Integer confirmedRequests = requestRepository.countConfirmedRequestsByEventId(eventId);
+            if (confirmedRequests >= event.getParticipantLimit()) {
+                throw new ConflictException("Достигнут лимит участников");
+            }
         }
 
         // Определение статуса заявки
@@ -88,7 +95,6 @@ public class RequestServiceImpl implements RequestService {
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
         log.info("Отмена запроса на участие: userId={}, requestId={}", userId, requestId);
 
-        // Этот метод использует findByIdAndRequesterId который уже имеет JOIN FETCH в репозитории
         ParticipationRequest request = requestRepository.findByIdAndRequesterId(requestId, userId)
                 .orElseThrow(() -> new NotFoundException("Запрос с id=" + requestId + " не найден"));
 
@@ -113,7 +119,6 @@ public class RequestServiceImpl implements RequestService {
             throw new NotFoundException("Пользователь с id=" + userId + " не найден");
         }
 
-        // Этот метод использует findByRequesterId который уже имеет JOIN FETCH в репозитории
         List<ParticipationRequest> requests = requestRepository.findByRequesterId(userId);
 
         return requests.stream()

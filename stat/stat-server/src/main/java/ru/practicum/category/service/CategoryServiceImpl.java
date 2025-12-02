@@ -9,6 +9,7 @@ import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.dto.NewCategoryDto;
 import ru.practicum.category.model.Category;
 import ru.practicum.category.repository.CategoryRepository;
+import ru.practicum.exception.BadRequestException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 
@@ -53,6 +54,11 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryDto updateCategory(Long catId, CategoryDto categoryDto) {
         Category category = getCategoryByIdOrThrow(catId);
+
+        // Валидация длины имени
+        if (categoryDto.getName().length() > 50) {
+            throw new BadRequestException("Длина имени категории не должна превышать 50 символов");
+        }
 
         if (!category.getName().equals(categoryDto.getName()) &&
                 categoryRepository.existsByNameAndIdNot(categoryDto.getName(), catId)) {

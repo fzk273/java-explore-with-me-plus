@@ -15,11 +15,13 @@ import ru.practicum.event.dto.*;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.repository.EventRepository;
 import ru.practicum.event.repository.ParticipationRequestRepository;
+import ru.practicum.exception.BadRequestException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 import ru.practicum.user.dto.UserShortDto;
+import ru.practicum.statistic.StatClient;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,6 +37,7 @@ public class EventServiceImpl implements EventService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final ParticipationRequestRepository requestRepository;
+    private final StatClient statClient;
 
     @Override
     @Transactional
@@ -47,8 +50,9 @@ public class EventServiceImpl implements EventService {
         Category category = categoryRepository.findById(newEventDto.getCategory())
                 .orElseThrow(() -> new NotFoundException("Категория с id=" + newEventDto.getCategory() + " не найдена"));
 
+        // Проверка даты события
         if (newEventDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new ConflictException("Дата события должна быть минимум на 2 часа позже текущего времени");
+            throw new BadRequestException("Дата события должна быть минимум на 2 часа позже текущего времени");
         }
 
         Event event = Event.builder()
@@ -83,7 +87,7 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(from / size, size, Sort.by("id").ascending());
 
         List<Event.EventState> eventStates = null;
-        if (states != null) {
+        if (states != null && !states.isEmpty()) {
             eventStates = states.stream()
                     .map(Event.EventState::valueOf)
                     .collect(Collectors.toList());
@@ -104,8 +108,16 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id=" + eventId + " не найдено"));
 
-        if (updateEvent.getEventDate() != null && updateEvent.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
-            throw new ConflictException("Дата события должна быть минимум на 1 час позже текущего времени");
+        // Проверка на отрицательный лимит участников
+        if (updateEvent.getParticipantLimit() != null && updateEvent.getParticipantLimit() < 0) {
+            throw new BadRequestException("Participant limit cannot be negative");
+        }
+
+        // Проверка даты события - ИЗМЕНИТЬ ConflictException на BadRequestException
+        if (updateEvent.getEventDate() != null) {
+            if (updateEvent.getEventDate().isBefore(LocalDateTime.now())) {
+                throw new BadRequestException("Дата события не может быть в прошлом");  // Было ConflictException
+            }
         }
 
         updateEventFields(event, updateEvent);
@@ -116,6 +128,9 @@ public class EventServiceImpl implements EventService {
                     if (event.getState() != Event.EventState.PENDING) {
                         throw new ConflictException("Можно публиковать только события в состоянии PENDING");
                     }
+                    if (event.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
+                        throw new ConflictException("Дата события должна быть минимум на 1 час позже текущего времени");
+                    }
                     event.setState(Event.EventState.PUBLISHED);
                     event.setPublishedOn(LocalDateTime.now());
                     break;
@@ -124,6 +139,9 @@ public class EventServiceImpl implements EventService {
                         throw new ConflictException("Нельзя отклонить опубликованное событие");
                     }
                     event.setState(Event.EventState.CANCELED);
+                    break;
+                default:
+                    // Для администратора другие действия не нужны
                     break;
             }
         }
@@ -180,11 +198,26 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    public EventFullDto getEventByAdmin(Long eventId) {
+        log.info("Получение события с id={} администратором", eventId);
+
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Событие с id=" + eventId + " не найдено"));
+
+        return toEventFullDto(event);
+    }
+
+    @Override
     public List<EventShortDto> getEventsPublic(String text, List<Long> categories, Boolean paid,
                                                LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
                                                String sort, Integer from, Integer size, HttpServletRequest request) {
         log.info("Публичный поиск событий: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}, sort={}, from={}, size={}",
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
+
+        // Валидация дат
+        if (rangeStart != null && rangeEnd != null && rangeEnd.isBefore(rangeStart)) {
+            throw new BadRequestException("End date must be after start date");
+        }
 
         Pageable pageable;
         if ("EVENT_DATE".equals(sort)) {
@@ -201,6 +234,15 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = eventRepository.findPublishedEventsWithFilters(
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable, pageable);
+
+        // Отправляем статистику о запросе (для аналитики)
+        if (request != null) {
+            try {
+                statClient.hit(request);
+            } catch (Exception e) {
+                log.error("Ошибка при отправке статистики: {}", e.getMessage());
+            }
+        }
 
         return events.stream()
                 .map(this::toEventShortDto)
@@ -219,11 +261,21 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Событие с id=" + id + " не найдено");
         }
 
-        // Увеличиваем счетчик просмотров (используем поле из базы)
+        // УВЕЛИЧИВАЕМ СЧЕТЧИК ПРОСМОТРОВ В БАЗЕ ДАННЫХ
         event.setViews(event.getViews() + 1);
-        eventRepository.save(event);
+        Event savedEvent = eventRepository.save(event);
+        log.info("Событие с id={} просмотрено. Количество просмотров: {}", id, savedEvent.getViews());
 
-        return toEventFullDto(event);
+        // Отправляем статистику о просмотре (для аналитики, но не для подсчета views)
+        if (request != null) {
+            try {
+                statClient.hit(request);
+            } catch (Exception e) {
+                log.error("Ошибка при отправке статистики: {}", e.getMessage());
+            }
+        }
+
+        return toEventFullDto(savedEvent);
     }
 
     @Override
@@ -259,12 +311,20 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Событие с id=" + eventId + " не найдено"));
 
+        // Проверка на отрицательный лимит участников
+        if (updateEvent.getParticipantLimit() != null && updateEvent.getParticipantLimit() < 0) {
+            throw new BadRequestException("Participant limit cannot be negative");
+        }
+
         if (event.getState() == Event.EventState.PUBLISHED) {
             throw new ConflictException("Нельзя изменять опубликованные события");
         }
 
-        if (updateEvent.getEventDate() != null && updateEvent.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new ConflictException("Дата события должна быть минимум на 2 часа позже текущего времени");
+        // Проверка даты события
+        if (updateEvent.getEventDate() != null) {
+            if (updateEvent.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
+                throw new BadRequestException("Дата события должна быть минимум на 2 часа позже текущего времени");
+            }
         }
 
         updateEventFields(event, updateEvent);
@@ -278,8 +338,6 @@ public class EventServiceImpl implements EventService {
                     event.setState(Event.EventState.CANCELED);
                     break;
             }
-        } else {
-            event.setState(Event.EventState.PENDING);
         }
 
         Event updatedEvent = eventRepository.save(event);
@@ -308,14 +366,45 @@ public class EventServiceImpl implements EventService {
         return toEventFullDto(canceledEvent);
     }
 
+    @Override
+    public Event getEventById(Long eventId) {
+        return eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Событие с id=" + eventId + " не найдено"));
+    }
+
+    @Override
+    public Event getEventByUserId(Long userId, Long eventId) {
+        return eventRepository.findByIdAndInitiatorId(eventId, userId)
+                .orElseThrow(() -> new NotFoundException("Событие с id=" + eventId + " не найдено"));
+    }
+
+    @Override
+    public boolean isEventAvailableForParticipation(Event event) {
+        if (event.getState() != Event.EventState.PUBLISHED) {
+            return false;
+        }
+
+        if (event.getParticipantLimit() > 0) {
+            Integer confirmedRequests = getConfirmedRequestsCount(event.getId());
+            return confirmedRequests < event.getParticipantLimit();
+        }
+
+        return true;
+    }
+
+    @Override
+    public Integer getConfirmedRequestsCount(Long eventId) {
+        return requestRepository.countConfirmedRequestsByEventId(eventId);
+    }
+
     private void updateEventFields(Event event, UpdateEventRequest updateEvent) {
-        if (updateEvent.getTitle() != null) {
+        if (updateEvent.getTitle() != null && !updateEvent.getTitle().isBlank()) {
             event.setTitle(updateEvent.getTitle());
         }
-        if (updateEvent.getAnnotation() != null) {
+        if (updateEvent.getAnnotation() != null && !updateEvent.getAnnotation().isBlank()) {
             event.setAnnotation(updateEvent.getAnnotation());
         }
-        if (updateEvent.getDescription() != null) {
+        if (updateEvent.getDescription() != null && !updateEvent.getDescription().isBlank()) {
             event.setDescription(updateEvent.getDescription());
         }
         if (updateEvent.getCategory() != null) {
@@ -342,10 +431,7 @@ public class EventServiceImpl implements EventService {
     }
 
     private EventFullDto toEventFullDto(Event event) {
-        // Используем views из базы данных (поле event.getViews())
-        Long views = event.getViews();
-
-        Integer confirmedRequests = requestRepository.countConfirmedRequestsByEventId(event.getId());
+        Integer confirmedRequests = getConfirmedRequestsCount(event.getId());
 
         CategoryDto categoryDto = CategoryDto.builder()
                 .id(event.getCategory().getId())
@@ -378,12 +464,12 @@ public class EventServiceImpl implements EventService {
                 .location(locationDto)
                 .requestModeration(event.getRequestModeration())
                 .confirmedRequests(confirmedRequests != null ? confirmedRequests : 0)
-                .views(views)  // Используем views из базы
+                .views(event.getViews())
                 .build();
     }
 
     private EventShortDto toEventShortDto(Event event) {
-        Integer confirmedRequests = requestRepository.countConfirmedRequestsByEventId(event.getId());
+        Integer confirmedRequests = getConfirmedRequestsCount(event.getId());
 
         CategoryDto categoryDto = CategoryDto.builder()
                 .id(event.getCategory().getId())
@@ -404,7 +490,7 @@ public class EventServiceImpl implements EventService {
                 .eventDate(event.getEventDate())
                 .initiator(userShortDto)
                 .confirmedRequests(confirmedRequests != null ? confirmedRequests : 0)
-                .views(event.getViews())  // Используем views из базы
+                .views(event.getViews())
                 .build();
     }
 }
