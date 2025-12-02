@@ -7,16 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.category.model.Category;
 import ru.practicum.category.repository.CategoryRepository;
-import ru.practicum.event.dto.EventShortDto;
-import ru.practicum.event.dto.UpdateEventAdminRequest;
-import ru.practicum.event.dto.UpdateEventUserRequest;
-import ru.practicum.statistic.StatClient;
-import ru.practicum.event.dto.EventFullDto;
-import ru.practicum.event.dto.NewEventDto;
+import ru.practicum.event.dao.EventRepository;
+import ru.practicum.event.dto.*;
 import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
-import ru.practicum.event.dao.EventRepository;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.exception.ValidationException;
@@ -25,7 +20,12 @@ import ru.practicum.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.request.dto.ParticipationRequestDto;
 import ru.practicum.request.mapper.RequestMapper;
 import ru.practicum.request.model.Request;
+import ru.practicum.request.model.RequestStatus;
+import ru.practicum.request.repository.RequestRepository;
+import ru.practicum.statistic.StatClient;
 import ru.practicum.user.model.User;
+import ru.practicum.user.repository.UserRepository;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -241,8 +241,8 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventShortDto> searchForUser(String text, List<Long> categories, Boolean paid,
-                                               LocalDateTime rangeStart, LocalDateTime rangeEnd,
-                                               Boolean onlyAvailable, String sort, Integer from, Integer size) {
+                                             LocalDateTime rangeStart, LocalDateTime rangeEnd,
+                                             Boolean onlyAvailable, String sort, Integer from, Integer size) {
         try {
             if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
                 throw new ValidationException("Дата начала не может быть позже даты окончания");
@@ -310,7 +310,7 @@ public class EventServiceImpl implements EventService {
         }
 
         return requestRepository.findByEventId(eventId).stream()
-                .map(requestMapper::toDto)
+                .map(requestMapper::requestToParticipationRequestDto)
                 .toList();
     }
 
@@ -352,11 +352,11 @@ public class EventServiceImpl implements EventService {
 
                 request.setStatus(RequestStatus.CONFIRMED);
                 confirmedCount++;
-                confirmedRequests.add(RequestMapper.toDto(request));
+                confirmedRequests.add(requestMapper.requestToParticipationRequestDto(request));
                 event.setConfirmedRequests(confirmedCount);
             } else if (updateRequest.getStatus().equals(RequestStatus.REJECTED)) {
                 request.setStatus(RequestStatus.REJECTED);
-                rejectedRequests.add(RequestMapper.toDto(request));
+                rejectedRequests.add(requestMapper.requestToParticipationRequestDto(request));
             }
         }
 
@@ -371,7 +371,7 @@ public class EventServiceImpl implements EventService {
 
             for (Request pendingRequest : pendingRequests) {
                 pendingRequest.setStatus(RequestStatus.REJECTED);
-                rejectedRequests.add(RequestMapper.toDto(pendingRequest));
+                rejectedRequests.add(requestMapper.requestToParticipationRequestDto(pendingRequest));
             }
 
             requestRepository.saveAll(pendingRequests);
