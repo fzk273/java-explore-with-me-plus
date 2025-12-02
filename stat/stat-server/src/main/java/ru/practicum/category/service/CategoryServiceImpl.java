@@ -1,4 +1,3 @@
-// main-service/src/main/java/ru/practicum/category/service/CategoryServiceImpl.java
 package ru.practicum.category.service;
 
 import lombok.RequiredArgsConstructor;
