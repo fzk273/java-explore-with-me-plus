@@ -1,18 +1,14 @@
 package ru.practicum.event.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.practicum.category.model.Category;
 import ru.practicum.category.mapper.CategoryMapper;
-import ru.practicum.event.dto.EventFullDto;
-import ru.practicum.event.dto.EventShortDto;
-import ru.practicum.event.dto.NewEventDto;
-import ru.practicum.event.dto.UpdateEventAdminRequest;
-import ru.practicum.event.dto.UpdateEventUserRequest;
+import ru.practicum.category.model.Category;
+import ru.practicum.event.dto.*;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
 import ru.practicum.event.model.Location;
-import ru.practicum.user.model.User;
 import ru.practicum.user.mapper.UserMapper;
+import ru.practicum.user.model.User;
 
 import java.time.LocalDateTime;
 
@@ -40,7 +36,10 @@ public class EventMapper {
         event.setLat(newEventDto.getLocation().getLat());
         event.setLon(newEventDto.getLocation().getLon());
         event.setPaid(newEventDto.getPaid());
-        event.setParticipantLimit(newEventDto.getParticipantLimit());
+
+        Long participantLimit = newEventDto.getParticipantLimit() == null ? 0L : newEventDto.getParticipantLimit();
+        event.setParticipantLimit(participantLimit);
+
         event.setRequestModeration(newEventDto.getRequestModeration());
         event.setState(EventState.PENDING);
         event.setTitle(newEventDto.getTitle());

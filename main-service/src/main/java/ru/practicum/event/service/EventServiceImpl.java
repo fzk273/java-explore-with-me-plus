@@ -55,7 +55,7 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new NotFoundException("Категория с id = " + newEventDto.getCategory() + " не найдена"));
 
         if (newEventDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new ValidationException("Дата события должна быть не раньше чем через 2 часа от текущего момента");
+            throw new ConflictException("Дата события должна быть не раньше чем через 2 часа от текущего момента");
         }
 
         Event event = eventMapper.mapToEvent(newEventDto, user, category);
@@ -76,7 +76,7 @@ public class EventServiceImpl implements EventService {
 
         if (updateRequest.getEventDate() != null &&
                 updateRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new ValidationException("Дата события должна быть не раньше чем через 2 часа от текущего момента");
+            throw new ConflictException("Дата события должна быть не раньше чем через 2 часа от текущего момента");
         }
 
         if (updateRequest.getParticipantLimit() != null && updateRequest.getParticipantLimit() < 0) {
@@ -115,7 +115,7 @@ public class EventServiceImpl implements EventService {
 
         if (updateRequest.getEventDate() != null &&
                 updateRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
-            throw new ValidationException("Дата начала события должна быть не ранее чем за час от даты публикации");
+            throw new ConflictException("Дата начала события должна быть не ранее чем за час от даты публикации");
         }
 
         if (updateRequest.getParticipantLimit() != null && updateRequest.getParticipantLimit() < 0) {

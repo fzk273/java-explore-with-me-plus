@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS events (
     participant_limit   INT NOT NULL DEFAULT 0,
     request_moderation  BOOLEAN NOT NULL DEFAULT TRUE,
     state               VARCHAR(10) NOT NULL,
+    title               VARCHAR(120) NOT NULL,
     CONSTRAINT fk_events_category FOREIGN KEY (category_id) REFERENCES categories(id),
     CONSTRAINT fk_events_initiator FOREIGN KEY (initiator_id) REFERENCES users(id),
     CONSTRAINT chk_events_state CHECK (state IN ('PENDING', 'PUBLISHED', 'CANCELED'))
