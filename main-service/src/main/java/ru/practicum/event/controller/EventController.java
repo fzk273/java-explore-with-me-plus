@@ -61,7 +61,9 @@ public class EventController {
     @GetMapping("/events/{id}")
     public EventFullDto getPublicEvent(@PathVariable("id") Long eventId,
                                        HttpServletRequest request) {
-        statClient.hit(request);
+        if (statClient != null) {
+            statClient.hit(request);
+        }
 
         return eventService.getPublicEvent(eventId);
     }

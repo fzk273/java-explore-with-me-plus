@@ -156,6 +156,43 @@ public class ErrorHandler {
                 .build();
     }
 
+
+    @ExceptionHandler(ValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleValidationException(ValidationException e) {
+        log.warn("ValidationException: {}", e.getMessage());
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .message(e.getMessage())
+                .build();
+    }
+
+    @ExceptionHandler(ParticipantLimitException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleParticipantLimitException(ParticipantLimitException e) {
+        log.warn("ParticipantLimitException: {}", e.getMessage());
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error(HttpStatus.CONFLICT.getReasonPhrase())
+                .message(e.getMessage())
+                .build();
+    }
+
+    @ExceptionHandler(NotPublishEventException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleNotPublishEventException(NotPublishEventException e) {
+        log.warn("NotPublishEventException: {}", e.getMessage());
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                .message(e.getMessage())
+                .build();
+    }
+
     @Data
     @Builder
     @NoArgsConstructor

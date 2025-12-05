@@ -12,6 +12,7 @@ import ru.practicum.event.dto.*;
 import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
+import ru.practicum.exception.BadRequestException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.exception.ValidationException;
@@ -80,7 +81,7 @@ public class EventServiceImpl implements EventService {
         }
 
         if (updateRequest.getParticipantLimit() != null && updateRequest.getParticipantLimit() < 0) {
-            throw new ValidationException("Лимит участников не может быть отрицательным");
+            throw new BadRequestException("Лимит участников не может быть отрицательным");
         }
 
         if (updateRequest.getCategory() != null) {
@@ -220,6 +221,9 @@ public class EventServiceImpl implements EventService {
 
             int startIndex = Math.min(from, filteredEvents.size());
             int endIndex = Math.min(from + size, filteredEvents.size());
+            if (startIndex >= endIndex) {
+                return Collections.emptyList();
+            }
             List<Event> paginatedEvents = filteredEvents.subList(startIndex, endIndex);
             Map<Long, Long> viewsMap = getEventsViews(paginatedEvents);
             List<EventFullDto> result = new ArrayList<>();
@@ -270,6 +274,9 @@ public class EventServiceImpl implements EventService {
 
             int startIndex = Math.min(from, filteredEvents.size());
             int endIndex = Math.min(from + size, filteredEvents.size());
+            if (startIndex >= endIndex) {
+                return Collections.emptyList();
+            }
             List<Event> paginatedEvents = filteredEvents.subList(startIndex, endIndex);
             Map<Long, Long> viewsMap = getEventsViews(paginatedEvents);
 
