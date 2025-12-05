@@ -12,6 +12,7 @@ import ru.practicum.event.dto.*;
 import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
+import ru.practicum.exception.BadRequestException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.exception.ValidationException;
@@ -55,7 +56,7 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new NotFoundException("Категория с id = " + newEventDto.getCategory() + " не найдена"));
 
         if (newEventDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new ValidationException("Дата события должна быть не раньше чем через 2 часа от текущего момента");
+            throw new ConflictException("Дата события должна быть не раньше чем через 2 часа от текущего момента");
         }
 
         Event event = eventMapper.mapToEvent(newEventDto, user, category);
@@ -76,11 +77,11 @@ public class EventServiceImpl implements EventService {
 
         if (updateRequest.getEventDate() != null &&
                 updateRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new ValidationException("Дата события должна быть не раньше чем через 2 часа от текущего момента");
+            throw new ConflictException("Дата события должна быть не раньше чем через 2 часа от текущего момента");
         }
 
         if (updateRequest.getParticipantLimit() != null && updateRequest.getParticipantLimit() < 0) {
-            throw new ValidationException("Лимит участников не может быть отрицательным");
+            throw new BadRequestException("Лимит участников не может быть отрицательным");
         }
 
         if (updateRequest.getCategory() != null) {
@@ -115,7 +116,7 @@ public class EventServiceImpl implements EventService {
 
         if (updateRequest.getEventDate() != null &&
                 updateRequest.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
-            throw new ValidationException("Дата начала события должна быть не ранее чем за час от даты публикации");
+            throw new ConflictException("Дата начала события должна быть не ранее чем за час от даты публикации");
         }
 
         if (updateRequest.getParticipantLimit() != null && updateRequest.getParticipantLimit() < 0) {
@@ -220,6 +221,9 @@ public class EventServiceImpl implements EventService {
 
             int startIndex = Math.min(from, filteredEvents.size());
             int endIndex = Math.min(from + size, filteredEvents.size());
+            if (startIndex >= endIndex) {
+                return Collections.emptyList();
+            }
             List<Event> paginatedEvents = filteredEvents.subList(startIndex, endIndex);
             Map<Long, Long> viewsMap = getEventsViews(paginatedEvents);
             List<EventFullDto> result = new ArrayList<>();
@@ -270,6 +274,9 @@ public class EventServiceImpl implements EventService {
 
             int startIndex = Math.min(from, filteredEvents.size());
             int endIndex = Math.min(from + size, filteredEvents.size());
+            if (startIndex >= endIndex) {
+                return Collections.emptyList();
+            }
             List<Event> paginatedEvents = filteredEvents.subList(startIndex, endIndex);
             Map<Long, Long> viewsMap = getEventsViews(paginatedEvents);
 

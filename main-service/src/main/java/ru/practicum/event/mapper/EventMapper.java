@@ -1,18 +1,16 @@
 package ru.practicum.event.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.practicum.category.model.Category;
+import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.mapper.CategoryMapper;
-import ru.practicum.event.dto.EventFullDto;
-import ru.practicum.event.dto.EventShortDto;
-import ru.practicum.event.dto.NewEventDto;
-import ru.practicum.event.dto.UpdateEventAdminRequest;
-import ru.practicum.event.dto.UpdateEventUserRequest;
+import ru.practicum.category.model.Category;
+import ru.practicum.event.dto.*;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
 import ru.practicum.event.model.Location;
-import ru.practicum.user.model.User;
+import ru.practicum.user.dto.UserShortDto;
 import ru.practicum.user.mapper.UserMapper;
+import ru.practicum.user.model.User;
 
 import java.time.LocalDateTime;
 
@@ -40,7 +38,10 @@ public class EventMapper {
         event.setLat(newEventDto.getLocation().getLat());
         event.setLon(newEventDto.getLocation().getLon());
         event.setPaid(newEventDto.getPaid());
-        event.setParticipantLimit(newEventDto.getParticipantLimit());
+
+        Long participantLimit = newEventDto.getParticipantLimit() == null ? 0L : newEventDto.getParticipantLimit();
+        event.setParticipantLimit(participantLimit);
+
         event.setRequestModeration(newEventDto.getRequestModeration());
         event.setState(EventState.PENDING);
         event.setTitle(newEventDto.getTitle());
@@ -50,24 +51,42 @@ public class EventMapper {
     }
 
     public EventFullDto mapToFullDto(Event event) {
-        Location location = new Location(event.getLat(), event.getLon());
+        if (event == null) {
+            return null;
+        }
+
         EventFullDto fullDto = new EventFullDto();
 
+        fullDto.setId(event.getId());
+        fullDto.setTitle(event.getTitle());
         fullDto.setAnnotation(event.getAnnotation());
-        fullDto.setCategory(categoryMapper.toCategoryDto(event.getCategory()));
-        fullDto.setConfirmedRequests(event.getConfirmedRequests() != null ? event.getConfirmedRequests() : 0L);
-        fullDto.setCreatedOn(event.getCreatedOn());
         fullDto.setDescription(event.getDescription());
         fullDto.setEventDate(event.getEventDate());
-        fullDto.setId(event.getId());
-        fullDto.setInitiator(userMapper.toUserShortDto(event.getInitiator()));
+        fullDto.setCreatedOn(event.getCreatedOn());
+
+        fullDto.setCategory(event.getCategory() != null ?
+                categoryMapper.toCategoryDto(event.getCategory()) :
+                new CategoryDto());
+
+        fullDto.setInitiator(event.getInitiator() != null ?
+                userMapper.toUserShortDto(event.getInitiator()) :
+                new UserShortDto());
+
+        Location location = null;
+        if (event.getLat() != null && event.getLon() != null) {
+            location = new Location(event.getLat(), event.getLon());
+        }
         fullDto.setLocation(location);
-        fullDto.setPaid(event.getPaid() != null ? event.getPaid() : false);
+
+        fullDto.setPaid(event.getPaid() != null ? event.getPaid() : Boolean.FALSE);
         fullDto.setParticipantLimit(event.getParticipantLimit() != null ? event.getParticipantLimit() : 0L);
+        fullDto.setRequestModeration(event.getRequestModeration() != null ? event.getRequestModeration() : Boolean.TRUE);
         fullDto.setPublishedOn(event.getPublishedOn());
-        fullDto.setRequestModeration(event.getRequestModeration() != null ? event.getRequestModeration() : true);
+
         fullDto.setState(event.getState() != null ? event.getState() : EventState.PENDING);
-        fullDto.setTitle(event.getTitle());
+
+        // Числовые поля - никогда не должны быть null для JSON
+        fullDto.setConfirmedRequests(event.getConfirmedRequests() != null ? event.getConfirmedRequests() : 0L);
         fullDto.setViews(event.getViews() != null ? event.getViews() : 0L);
 
         return fullDto;

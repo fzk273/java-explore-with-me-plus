@@ -1,73 +1,67 @@
 package ru.practicum.event.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 import lombok.Data;
 import ru.practicum.category.model.Category;
 import ru.practicum.user.model.User;
+
 import java.time.LocalDateTime;
 
 @Data
 @Entity
 @Table(name = "events")
 public class Event {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column
+    @Column(nullable = false, length = 2000)
     private String annotation;
 
-    @Column
+    @Column(nullable = false, length = 7000)
     private String description;
 
-    @Column(name = "event_date")
+    @Column(name = "event_date", nullable = false)
     private LocalDateTime eventDate;
 
-    @Column(name = "created_on")
+    @Column(name = "created_on", nullable = false)
     private LocalDateTime createdOn;
 
     @Column(name = "published_on")
     private LocalDateTime publishedOn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "initiator_id")
+    @JoinColumn(name = "initiator_id", nullable = false)
     private User initiator;
 
     @Column(name = "confirmed_requests")
     private Long confirmedRequests;
 
-    @Column
+    @Column(nullable = false)
     private Float lat;
 
-    @Column
+    @Column(nullable = false)
     private Float lon;
 
-    @Column
+    @Column(nullable = false)
     private Boolean paid;
 
-    @Column(name = "participant_limit")
+    @Column(name = "participant_limit", nullable = false)
     private Long participantLimit;
 
-    @Column(name = "request_moderation")
+    @Column(name = "request_moderation", nullable = false)
     private Boolean requestModeration;
 
-    @Column
+    @Enumerated(EnumType.STRING)
+    @Column(name = "state", nullable = false, length = 10)
     private EventState state;
 
-    @Column
+    @Column(nullable = false, length = 120)
     private String title;
 
     @Transient
