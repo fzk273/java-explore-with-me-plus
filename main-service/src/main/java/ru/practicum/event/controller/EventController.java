@@ -99,7 +99,9 @@ public class EventController {
                                              @RequestParam(defaultValue = "10") Integer size,
                                              HttpServletRequest request) {
 
-        statClient.hit(request);
+        if (statClient != null) {
+            statClient.hit(request);
+        }
 
         return eventService.searchForUser(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
     }

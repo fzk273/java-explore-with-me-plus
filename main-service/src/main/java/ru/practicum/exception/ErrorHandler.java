@@ -181,6 +181,30 @@ public class ErrorHandler {
                 .build();
     }
 
+    @ExceptionHandler(InitiatorRequestException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleInitiatorRequestException(InitiatorRequestException e) {
+        log.warn("InitiatorRequestException: {}", e.getMessage());
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error(HttpStatus.CONFLICT.getReasonPhrase())
+                .message(e.getMessage())
+                .build();
+    }
+
+    @ExceptionHandler(RepeatableUserRequestException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleRepeatableUserRequestException(RepeatableUserRequestException e) {
+        log.warn("RepeatableUserRequestException: {}", e.getMessage());
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error(HttpStatus.CONFLICT.getReasonPhrase())
+                .message(e.getMessage())
+                .build();
+    }
+
     @ExceptionHandler(NotPublishEventException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotPublishEventException(NotPublishEventException e) {

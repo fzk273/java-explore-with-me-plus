@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS events (
     event_date          TIMESTAMP NOT NULL,
     created_on          TIMESTAMP NOT NULL DEFAULT NOW(),
     published_on        TIMESTAMP NULL,
+    confirmed_requests  INT DEFAULT 0,
     category_id         BIGINT NOT NULL,
     initiator_id        BIGINT NOT NULL,
     lat                 DOUBLE PRECISION NOT NULL,
