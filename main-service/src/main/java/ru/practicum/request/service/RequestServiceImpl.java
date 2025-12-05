@@ -80,11 +80,17 @@ public class RequestServiceImpl implements RequestService {
     @Override
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
         Request cancellingRequest = requestRepository.findByIdAndRequesterId(requestId, userId)
-                .orElseThrow(() -> new NotFoundException(String.format("Request with id %s not found or unavailable " +
-                        "for user with id %s", requestId, userId)));
+                .orElseThrow(() -> new NotFoundException(
+                        String.format("Request with id %s not found or unavailable for user with id %s",
+                                requestId, userId)));
+
+        if (cancellingRequest.getStatus() != RequestStatus.PENDING) {
+            throw new ConflictException("Статус можно изменить только у заявок, находящихся в состоянии ожидания");
+        }
+
         cancellingRequest.setStatus(RequestStatus.CANCELED);
-        cancellingRequest = requestRepository.save(cancellingRequest);
-        return requestMapper.requestToParticipationRequestDto(cancellingRequest);
+        Request saved = requestRepository.save(cancellingRequest);
+        return requestMapper.requestToParticipationRequestDto(saved);
     }
 
 }

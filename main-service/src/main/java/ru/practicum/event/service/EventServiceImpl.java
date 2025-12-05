@@ -265,7 +265,6 @@ public class EventServiceImpl implements EventService {
                             event.getDescription().toLowerCase().contains(text.toLowerCase()))
                     .filter(event -> categories == null || categories.isEmpty() ||
                             categories.contains(event.getCategory().getId()))
-                    // защитимся от NPE на paid
                     .filter(event -> {
                         if (paid == null) return true;
                         Boolean eventPaid = event.getPaid();
@@ -311,7 +310,7 @@ public class EventServiceImpl implements EventService {
                         e2.getViews() != null ? e2.getViews() : 0L,
                         e1.getViews() != null ? e1.getViews() : 0L
                 ));
-            } else {
+            } else if ("EVENT_DATE".equalsIgnoreCase(sort) || sort == null) {
                 result.sort((e1, e2) -> e1.getEventDate().compareTo(e2.getEventDate()));
             }
 
