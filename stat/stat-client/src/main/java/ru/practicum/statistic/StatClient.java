@@ -88,19 +88,15 @@ public class StatClient {
                                             List<String> uris,
                                             Boolean unique) {
 
-        String startStr = encodeDate(start);
-        String endStr = encodeDate(end);
-        String urisCsv = String.join(",", uris);
-
         String uriWithParams = UriComponentsBuilder.newInstance()
                 .scheme(SCHEME)
                 .host(serverUrl)
                 .port(port)
                 .path("/stats")
-                .queryParam("uris", urisCsv)
+                .queryParam("start", start.format(FORMATTER))
+                .queryParam("end", end.format(FORMATTER))
                 .queryParam("unique", unique)
-                .queryParam("start", startStr)
-                .queryParam("end", endStr)
+                .queryParam("uris", uris.toArray(new String[0]))
                 .toUriString();
 
         try {

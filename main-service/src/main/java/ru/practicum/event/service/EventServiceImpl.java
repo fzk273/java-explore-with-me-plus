@@ -254,6 +254,8 @@ public class EventServiceImpl implements EventService {
                 throw new ValidationException("Дата начала не может быть позже даты окончания");
             }
 
+            LocalDateTime actualRangeStart = (rangeStart != null) ? rangeStart : LocalDateTime.now();
+
             List<Event> allEvents = eventRepository.findAll();
 
             List<Event> filteredEvents = allEvents.stream()
@@ -263,15 +265,28 @@ public class EventServiceImpl implements EventService {
                             event.getDescription().toLowerCase().contains(text.toLowerCase()))
                     .filter(event -> categories == null || categories.isEmpty() ||
                             categories.contains(event.getCategory().getId()))
-                    .filter(event -> paid == null || event.getPaid() == paid)
-                    .filter(event -> rangeStart == null ||
-                            !event.getEventDate().isBefore(rangeStart))
-                    .filter(event -> rangeEnd == null ||
-                            !event.getEventDate().isAfter(rangeEnd))
-                    .filter(event -> onlyAvailable == null || !onlyAvailable ||
-                            event.getParticipantLimit() == 0 ||
-                            (event.getConfirmedRequests() != null && event.getConfirmedRequests() <
-                                    event.getParticipantLimit()))
+                    // защитимся от NPE на paid
+                    .filter(event -> {
+                        if (paid == null) return true;
+                        Boolean eventPaid = event.getPaid();
+                        return eventPaid != null && eventPaid.equals(paid);
+                    })
+                    .filter(event -> !event.getEventDate().isBefore(actualRangeStart))
+                    .filter(event -> rangeEnd == null || !event.getEventDate().isAfter(rangeEnd))
+                    .filter(event -> {
+                        if (onlyAvailable == null || !onlyAvailable) {
+                            return true;
+                        }
+                        Long limit = event.getParticipantLimit();
+                        Long confirmed = event.getConfirmedRequests();
+                        if (limit == null || limit == 0) {
+                            return true;
+                        }
+                        if (confirmed == null) {
+                            confirmed = 0L;
+                        }
+                        return confirmed < limit;
+                    })
                     .toList();
 
             int startIndex = Math.min(from, filteredEvents.size());
@@ -291,13 +306,13 @@ public class EventServiceImpl implements EventService {
                 result.add(shortDto);
             }
 
-            if ("VIEWS".equals(sort)) {
+            if ("VIEWS".equalsIgnoreCase(sort)) {
                 result.sort((e1, e2) -> Long.compare(
                         e2.getViews() != null ? e2.getViews() : 0L,
                         e1.getViews() != null ? e1.getViews() : 0L
                 ));
-            } else if ("EVENT_DATE".equals(sort)) {
-                result.sort((e1, e2) -> e2.getEventDate().compareTo(e1.getEventDate()));
+            } else {
+                result.sort((e1, e2) -> e1.getEventDate().compareTo(e2.getEventDate()));
             }
 
             return result;
