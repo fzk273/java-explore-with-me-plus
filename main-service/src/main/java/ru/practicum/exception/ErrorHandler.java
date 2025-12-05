@@ -206,13 +206,13 @@ public class ErrorHandler {
     }
 
     @ExceptionHandler(NotPublishEventException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleNotPublishEventException(NotPublishEventException e) {
         log.warn("NotPublishEventException: {}", e.getMessage());
         return ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
-                .status(HttpStatus.NOT_FOUND.value())
-                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                .status(HttpStatus.CONFLICT.value())
+                .error(HttpStatus.CONFLICT.getReasonPhrase())
                 .message(e.getMessage())
                 .build();
     }
