@@ -1,6 +1,7 @@
 package ru.practicum.statistic;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
@@ -14,8 +15,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 
+@Slf4j
 @Component
 public class StatClient {
 
@@ -45,7 +48,11 @@ public class StatClient {
                 .timestamp(LocalDateTime.now().format(FORMATTER))
                 .build();
 
-        sendHit(dto);
+        try {
+            sendHit(dto);
+        } catch (Exception e) {
+            log.warn("Не удалось отправить hit в сервис статистики", e);
+        }
     }
 
     private void sendHit(EndpointHitDto dto) {
@@ -81,38 +88,38 @@ public class StatClient {
                                             List<String> uris,
                                             Boolean unique) {
 
-
-        String startStr = encodeDate(start);
-        String endStr = encodeDate(end);
-        String urisCsv = String.join(",", uris);
-
         String uriWithParams = UriComponentsBuilder.newInstance()
                 .scheme(SCHEME)
                 .host(serverUrl)
                 .port(port)
                 .path("/stats")
-                .queryParam("uris", urisCsv)
+                .queryParam("start", start.format(FORMATTER))
+                .queryParam("end", end.format(FORMATTER))
                 .queryParam("unique", unique)
-                .queryParam("start", startStr)
-                .queryParam("end", endStr)
+                .queryParam("uris", uris.toArray(new String[0]))
                 .toUriString();
 
-        return restClient.get()
-                .uri(uriWithParams)
-                .retrieve()
-                .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
-                    throw new ResponseStatusException(
-                            response.getStatusCode(),
-                            response.getBody().toString()
-                    );
-                })
-                .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
-                    throw new ResponseStatusException(
-                            response.getStatusCode(),
-                            response.getBody().toString()
-                    );
-                })
-                .body(new ParameterizedTypeReference<>() {});
+        try {
+            return restClient.get()
+                    .uri(uriWithParams)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::is5xxServerError, (request, response) -> {
+                        throw new ResponseStatusException(
+                                response.getStatusCode(),
+                                response.getBody().toString()
+                        );
+                    })
+                    .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                        throw new ResponseStatusException(
+                                response.getStatusCode(),
+                                response.getBody().toString()
+                        );
+                    })
+                    .body(new ParameterizedTypeReference<>() {});
+        } catch (Exception e) {
+            log.warn("Не удалось получить статистику из сервиса статистики", e);
+            return Collections.emptyList();
+        }
     }
 
     private String encodeDate(LocalDateTime date) {
