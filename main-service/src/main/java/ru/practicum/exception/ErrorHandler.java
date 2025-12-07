@@ -207,27 +207,24 @@ public class ErrorHandler {
                 // Для категории - уникальность имени
                 if (rootMessage.contains("uq_category_name")) {
                     errorMessage = "Category with this name already exists";
-                }
-                // Для пользователя - уникальность email
-                else if (rootMessage.contains("uq_user_email")) {
+                } else if (rootMessage.contains("uq_user_email")) {
+                    // Для пользователя - уникальность email
                     errorMessage = "User with this email already exists";
-                }
-                // Для подборок - уникальность названия
-                else if (rootMessage.contains("uq_compilation_name")) {
+                } else if (rootMessage.contains("uq_compilation_name")) {
+                    // Для подборок - уникальность названия
                     errorMessage = "Compilation with this title already exists";
-                }
-                // Для запросов на участие - уникальность пары event_id + requester_id
-                else if (rootMessage.contains("uq_request")) {
+                } else if (rootMessage.contains("uq_request")) {
+                    // Для запросов на участие - уникальность пары event_id + requester_id
                     errorMessage = "Request from this user for this event already exists";
-                }
-                // Общий случай
-                else if (rootMessage.contains("unique constraint") || rootMessage.contains("duplicate key")) {
+                } else if (rootMessage.contains("unique constraint") || rootMessage.contains("duplicate key")) {
+                    // Общий случай
                     errorMessage = "Duplicate entry violates unique constraint";
                 }
             }
         }
 
-        log.warn("DataIntegrityViolationException: {} - {}", errorMessage, e.getRootCause() != null ? e.getRootCause().getMessage() : e.getMessage());
+        log.warn("DataIntegrityViolationException: {} - {}", errorMessage,
+                e.getRootCause() != null ? e.getRootCause().getMessage() : e.getMessage());
         return ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.CONFLICT.value())
