@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -190,6 +191,48 @@ public class ErrorHandler {
                 .status(HttpStatus.CONFLICT.value())
                 .error(HttpStatus.CONFLICT.getReasonPhrase())
                 .message(e.getMessage())
+                .build();
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+        String errorMessage = "Data integrity violation";
+
+        // Извлекаем root cause для более детального сообщения
+        Throwable rootCause = e.getRootCause();
+        if (rootCause != null) {
+            String rootMessage = rootCause.getMessage();
+            if (rootMessage != null) {
+                // Для категории - уникальность имени
+                if (rootMessage.contains("uq_category_name")) {
+                    errorMessage = "Category with this name already exists";
+                }
+                // Для пользователя - уникальность email
+                else if (rootMessage.contains("uq_user_email")) {
+                    errorMessage = "User with this email already exists";
+                }
+                // Для подборок - уникальность названия
+                else if (rootMessage.contains("uq_compilation_name")) {
+                    errorMessage = "Compilation with this title already exists";
+                }
+                // Для запросов на участие - уникальность пары event_id + requester_id
+                else if (rootMessage.contains("uq_request")) {
+                    errorMessage = "Request from this user for this event already exists";
+                }
+                // Общий случай
+                else if (rootMessage.contains("unique constraint") || rootMessage.contains("duplicate key")) {
+                    errorMessage = "Duplicate entry violates unique constraint";
+                }
+            }
+        }
+
+        log.warn("DataIntegrityViolationException: {} - {}", errorMessage, e.getRootCause() != null ? e.getRootCause().getMessage() : e.getMessage());
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error(HttpStatus.CONFLICT.getReasonPhrase())
+                .message(errorMessage)
                 .build();
     }
 

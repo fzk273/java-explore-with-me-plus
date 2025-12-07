@@ -9,7 +9,6 @@ import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.dto.NewCategoryDto;
 import ru.practicum.category.model.Category;
 import ru.practicum.category.repository.CategoryRepository;
-import ru.practicum.exception.BadRequestException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 
@@ -26,10 +25,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryDto createCategory(NewCategoryDto newCategoryDto) {
-        if (categoryRepository.existsByName(newCategoryDto.getName())) {
-            throw new ConflictException("Category with name '" + newCategoryDto.getName() + "' already exists");
-        }
-
+        // Убрана явная проверка existsByName - теперь полагаемся на constraint в БД
         Category category = Category.builder()
                 .name(newCategoryDto.getName())
                 .build();
@@ -55,17 +51,12 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto updateCategory(Long catId, CategoryDto categoryDto) {
         Category category = getCategoryByIdOrThrow(catId);
 
-        // Валидация длины имени
-        if (categoryDto.getName().length() > 50) {
-            throw new BadRequestException("Длина имени категории не должна превышать 50 символов");
-        }
-
-        if (!category.getName().equals(categoryDto.getName()) &&
-                categoryRepository.existsByNameAndIdNot(categoryDto.getName(), catId)) {
-            throw new ConflictException("Category with name '" + categoryDto.getName() + "' already exists");
-        }
-
+        // Убрана проверка existsByNameAndIdNot - теперь полагаемся на constraint в БД
+        // Также убрана проверка длины имени - это делается валидацией в DTO
         category.setName(categoryDto.getName());
+
+        // При обновлении будет выброшено DataIntegrityViolationException,
+        // если имя уже существует у другой категории
         Category updatedCategory = categoryRepository.save(category);
         return toCategoryDto(updatedCategory);
     }
