@@ -9,7 +9,6 @@ import ru.practicum.compilations.model.Compilation;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.Event;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,12 +24,12 @@ public class CompilationMapper {
             return null;
         }
 
-        Compilation compilation = new Compilation();
         // id оставляем null — БД сгенерирует
-        compilation.setPinned(newDto.getPinned());
-        compilation.setTitle(newDto.getTitle());
         // events игнорируем — их добавляет сервис по newDto.getEvents()
-        return compilation;
+        return Compilation.builder()
+                .pinned(newDto.getPinned())
+                .title(newDto.getTitle())
+                .build();
     }
 
     public Compilation updateFromDto(UpdateCompilationDto updDto, Compilation compilation) {
