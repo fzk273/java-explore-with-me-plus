@@ -34,14 +34,13 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query("""
             SELECT e FROM Event e
-            LEFT JOIN FETCH e.category
-            LEFT JOIN FETCH e.initiator
             WHERE
-            (:userIds IS NULL OR e.initiator.id IN :userIds)
-            AND (:states IS NULL OR e.state IN :states)
-            AND (:categoryIds IS NULL OR e.category.id IN :categoryIds)
-            AND (:rangeStart IS NULL OR e.eventDate >= :rangeStart)
-            AND (:rangeEnd IS NULL OR e.eventDate <= :rangeEnd)
+                (:userIds IS NULL OR e.initiator.id IN :userIds)
+                AND (:states IS NULL OR e.state IN :states)
+                AND (:categoryIds IS NULL OR e.category.id IN :categoryIds)
+                AND e.eventDate >= COALESCE(:rangeStart, e.eventDate)
+                AND e.eventDate <= COALESCE(:rangeEnd, e.eventDate)
+            ORDER BY e.id
             """)
     List<Event> findEventsWithFilters(@Param("userIds") List<Long> userIds,
                                       @Param("states") List<EventState> states,
@@ -52,21 +51,21 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query("""
             SELECT e FROM Event e
-            LEFT JOIN FETCH e.category
-            LEFT JOIN FETCH e.initiator
             WHERE e.state = 'PUBLISHED'
-            AND (:text IS NULL OR LOWER(e.annotation) LIKE LOWER(CONCAT('%', :text, '%'))
-            OR LOWER(e.description) LIKE LOWER(CONCAT('%', :text, '%')))
-            AND (:categories IS NULL OR e.category.id IN :categories)
-            AND (:paid IS NULL OR e.paid = :paid)
-            AND (:rangeStart IS NULL OR e.eventDate >= :rangeStart)
-            AND (:rangeEnd IS NULL OR e.eventDate <= :rangeEnd)
-            AND (:onlyAvailable IS NULL OR :onlyAvailable = false OR
-                e.participantLimit = 0 OR
-                e.participantLimit > (
-                  SELECT COUNT(pr) FROM Request pr
-                  WHERE pr.event = e AND pr.status = 'CONFIRMED'
-            ))
+                AND (
+                    :text IS NULL OR LOWER(e.annotation) LIKE :text
+                    OR LOWER(e.description) LIKE :text
+                    )
+                AND (:categories IS NULL OR e.category.id IN :categories)
+                AND (:paid IS NULL OR e.paid = :paid)
+                AND e.eventDate >= COALESCE(:rangeStart, e.eventDate)
+                AND e.eventDate <= COALESCE(:rangeEnd, e.eventDate)
+                AND (
+                      :onlyAvailable IS NULL OR :onlyAvailable = false
+                      OR COALESCE(e.participantLimit, 0) = 0
+                      OR COALESCE(e.confirmedRequests, 0) < COALESCE(e.participantLimit, 0)
+                    )
+            ORDER BY e.id
             """)
     List<Event> findPublishedEventsWithFilters(@Param("text") String text,
                                                @Param("categories") List<Long> categories,
