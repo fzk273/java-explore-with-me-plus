@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.category.model.Category;
@@ -31,7 +30,6 @@ import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -164,9 +162,10 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено"));
 
-        List <Event> events = Collections.singletonList(event);
+        List<Event> events = Collections.singletonList(event);
+        Long eventViews = getEventsViews(events).getOrDefault(eventId, 0L);
         EventFullDto eventFullDto = eventMapper.mapToFullDto(event);
-        eventFullDto.setViews(getEventsViews(events).getOrDefault(eventId, 0L));
+        eventFullDto.setViews(eventViews);
 
         return eventFullDto;
     }
@@ -180,9 +179,10 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException("Событие не опубликовано");
         }
 
-        List <Event> events = Collections.singletonList(event);
+        List<Event> events = Collections.singletonList(event);
+        Long eventViews = getEventsViews(events).getOrDefault(eventId, 0L);
         EventFullDto eventFullDto = eventMapper.mapToFullDto(event);
-        eventFullDto.setViews(getEventsViews(events).getOrDefault(eventId, 0L));
+        eventFullDto.setViews(eventViews);
 
         return eventFullDto;
     }
