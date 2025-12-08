@@ -5,13 +5,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.user.dto.UserDto;
+import ru.practicum.exception.ConflictException;
+import ru.practicum.exception.NotFoundException;
 import ru.practicum.user.dto.NewUserRequest;
+import ru.practicum.user.dto.UserDto;
 import ru.practicum.user.mapper.UserMapper;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
-import ru.practicum.exception.ConflictException;
-import ru.practicum.exception.NotFoundException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
 
     @Override
     @Transactional
@@ -37,7 +36,7 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         User savedUser = userRepository.save(user);
-        return userMapper.toUserDto(savedUser);
+        return UserMapper.toUserDto(savedUser);
     }
 
     @Override
@@ -69,7 +68,7 @@ public class UserServiceImpl implements UserService {
         }
 
         return users.stream()
-                .map(userMapper::toUserDto)
+                .map(UserMapper::toUserDto)
                 .collect(Collectors.toList());
     }
 

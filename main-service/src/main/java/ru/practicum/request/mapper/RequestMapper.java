@@ -9,9 +9,9 @@ import java.time.format.DateTimeFormatter;
 @Component
 public class RequestMapper {
 
-    private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public  ParticipationRequestDto requestToParticipationRequestDto(Request request) {
+    public static ParticipationRequestDto requestToParticipationRequestDto(Request request) {
         ParticipationRequestDto requestDto = new ParticipationRequestDto();
         requestDto.setId(request.getId());
         requestDto.setEvent(request.getEvent().getId());

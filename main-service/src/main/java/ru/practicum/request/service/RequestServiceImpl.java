@@ -25,14 +25,12 @@ public class RequestServiceImpl implements RequestService {
     private final EventRepository eventRepository;
     private final RequestRepository requestRepository;
 
-    private final RequestMapper requestMapper;
-
     @Override
     public List<ParticipationRequestDto> getUserRequests(Long userId, HttpServletRequest request) {
         userRepository.findById(userId).orElseThrow(() -> new NotFoundException(String.format("User with id %s not found",
                 userId)));
         return requestRepository.findByRequesterId(userId).stream()
-                .map(requestMapper::requestToParticipationRequestDto)
+                .map(RequestMapper::requestToParticipationRequestDto)
                 .toList();
     }
 
@@ -63,18 +61,18 @@ public class RequestServiceImpl implements RequestService {
         if (event.getParticipantLimit() == 0) {
             request.setStatus(RequestStatus.CONFIRMED);
             request.setCreatedOn(LocalDateTime.now());
-            return requestMapper.requestToParticipationRequestDto(requestRepository.save(request));
+            return RequestMapper.requestToParticipationRequestDto(requestRepository.save(request));
         }
 
         if (event.getRequestModeration()) {
             request.setStatus(RequestStatus.PENDING);
             request.setCreatedOn(LocalDateTime.now());
-            return requestMapper.requestToParticipationRequestDto(requestRepository.save(request));
+            return RequestMapper.requestToParticipationRequestDto(requestRepository.save(request));
         } else {
             request.setStatus(RequestStatus.CONFIRMED);
             request.setCreatedOn(LocalDateTime.now());
         }
-        return requestMapper.requestToParticipationRequestDto(requestRepository.save(request));
+        return RequestMapper.requestToParticipationRequestDto(requestRepository.save(request));
     }
 
     @Override
@@ -90,7 +88,7 @@ public class RequestServiceImpl implements RequestService {
 
         cancellingRequest.setStatus(RequestStatus.CANCELED);
         Request saved = requestRepository.save(cancellingRequest);
-        return requestMapper.requestToParticipationRequestDto(saved);
+        return RequestMapper.requestToParticipationRequestDto(saved);
     }
 
 }

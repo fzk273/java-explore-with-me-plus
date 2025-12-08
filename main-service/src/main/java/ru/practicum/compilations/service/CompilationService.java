@@ -26,25 +26,24 @@ public class CompilationService {
 
     private final EventRepository eventRepository;
     private final CompilationRepository compilationRepository;
-    private final CompilationMapper compilationMapper;
 
     @Transactional
     public CompilationDto create(NewCompilationDto newDto) {
 
         List<Event> events = this.findEventsBy(newDto.getEvents());
 
-        Compilation compilation = compilationMapper.toEntity(newDto);
+        Compilation compilation = CompilationMapper.toEntity(newDto);
         compilation.setEvents(events);
         compilation = compilationRepository.save(compilation);
 
-        return compilationMapper.toDto(compilation);
+        return CompilationMapper.toDto(compilation);
     }
 
     @Transactional
     public CompilationDto update(Long compId, UpdateCompilationDto updDto) {
 
         Compilation compilation = this.findCompilationBy(compId);
-        compilation = compilationMapper.updateFromDto(updDto, compilation);
+        compilation = CompilationMapper.updateFromDto(updDto, compilation);
 
         if (updDto.getEvents() != null) {
             List<Event> events = eventRepository.findAllById(updDto.getEvents());
@@ -52,7 +51,7 @@ public class CompilationService {
         }
         compilation = compilationRepository.save(compilation);
 
-        return compilationMapper.toDto(compilation);
+        return CompilationMapper.toDto(compilation);
     }
 
     @Transactional
@@ -68,14 +67,14 @@ public class CompilationService {
 
         return compilations.getContent()
                 .stream()
-                .map(compilationMapper::toDto)
+                .map(CompilationMapper::toDto)
                 .toList();
     }
 
     public CompilationDto getBy(Long compId) {
         Compilation compilation = this.findCompilationBy(compId);
 
-        return compilationMapper.toDto(compilation);
+        return CompilationMapper.toDto(compilation);
     }
 
 

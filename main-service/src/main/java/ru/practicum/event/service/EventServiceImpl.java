@@ -14,11 +14,7 @@ import ru.practicum.event.dto.*;
 import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
-import ru.practicum.exception.BadRequestException;
-import ru.practicum.exception.ConflictException;
-import ru.practicum.exception.ForbiddenException;
-import ru.practicum.exception.NotFoundException;
-import ru.practicum.exception.ValidationException;
+import ru.practicum.exception.*;
 import ru.practicum.request.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.request.dto.ParticipationRequestDto;
@@ -29,12 +25,9 @@ import ru.practicum.request.repository.RequestRepository;
 import ru.practicum.statistic.StatClient;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
+
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -46,8 +39,6 @@ public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
-    private final EventMapper eventMapper;
-    private final RequestMapper requestMapper;
     private final StatClient statClient;
 
     @Override
@@ -63,10 +54,10 @@ public class EventServiceImpl implements EventService {
             throw new BadRequestException("Дата события должна быть не раньше чем через 2 часа от текущего момента");
         }
 
-        Event event = eventMapper.mapToEvent(newEventDto, user, category);
+        Event event = EventMapper.mapToEvent(newEventDto, user, category);
 
         Event savedEvent = eventRepository.save(event);
-        return eventMapper.mapToFullDto(savedEvent);
+        return EventMapper.mapToFullDto(savedEvent);
     }
 
     @Override
@@ -94,7 +85,7 @@ public class EventServiceImpl implements EventService {
             event.setCategory(category);
         }
 
-        eventMapper.updateEventFromUserRequest(updateRequest, event);
+        EventMapper.updateEventFromUserRequest(updateRequest, event);
 
         if (updateRequest.getStateAction() != null) {
             switch (updateRequest.getStateAction()) {
@@ -109,7 +100,7 @@ public class EventServiceImpl implements EventService {
 
         Event updatedEvent = eventRepository.save(event);
 
-        return eventMapper.mapToFullDto(updatedEvent);
+        return EventMapper.mapToFullDto(updatedEvent);
     }
 
     @Override
@@ -133,7 +124,7 @@ public class EventServiceImpl implements EventService {
             event.setCategory(category);
         }
 
-        eventMapper.updateEventFromAdminRequest(updateRequest, event);
+        EventMapper.updateEventFromAdminRequest(updateRequest, event);
 
         if (updateRequest.getStateAction() != null) {
             switch (updateRequest.getStateAction()) {
@@ -155,7 +146,7 @@ public class EventServiceImpl implements EventService {
 
         Event updatedEvent = eventRepository.save(event);
 
-        return eventMapper.mapToFullDto(updatedEvent);
+        return EventMapper.mapToFullDto(updatedEvent);
     }
 
     @Override
@@ -165,7 +156,7 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = Collections.singletonList(event);
         Long eventViews = getEventsViews(events).getOrDefault(eventId, 0L);
-        EventFullDto eventFullDto = eventMapper.mapToFullDto(event);
+        EventFullDto eventFullDto = EventMapper.mapToFullDto(event);
         eventFullDto.setViews(eventViews);
 
         return eventFullDto;
@@ -182,7 +173,7 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = Collections.singletonList(event);
         Long eventViews = getEventsViews(events).getOrDefault(eventId, 0L);
-        EventFullDto eventFullDto = eventMapper.mapToFullDto(event);
+        EventFullDto eventFullDto = EventMapper.mapToFullDto(event);
         eventFullDto.setViews(eventViews);
 
         return eventFullDto;
@@ -195,7 +186,7 @@ public class EventServiceImpl implements EventService {
         Map<Long, Long> viewsMap = getEventsViews(events);
 
         List<EventShortDto> eventShortDtos = events.stream()
-                .map(eventMapper::mapToShortDto)
+                .map(EventMapper::mapToShortDto)
                 .toList();
 
         eventShortDtos.forEach(
@@ -207,7 +198,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventFullDto> searchForAdmin(List<Long> users, List<EventState> states, List<Long> categories,
-                                               LocalDateTime rangeStart, LocalDateTime rangeEnd, Integer from, Integer size) {
+                                             LocalDateTime rangeStart, LocalDateTime rangeEnd, Integer from, Integer size) {
         log.info("Поиск событий администратором: users={}, states={}, categories={}, rangeStart={}, rangeEnd={}, from={}, size={}",
                 users, states, categories, rangeStart, rangeEnd, from, size);
 
@@ -222,14 +213,14 @@ public class EventServiceImpl implements EventService {
         List<Event> events = eventRepository.findEventsWithFilters(users, eventStates, categories, rangeStart, rangeEnd, pageable);
 
         return events.stream()
-                .map(eventMapper::mapToFullDto)
+                .map(EventMapper::mapToFullDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<EventShortDto> searchForUser(String text, List<Long> categories, Boolean paid,
-                                               LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
-                                               String sort, Integer from, Integer size) {
+                                             LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
+                                             String sort, Integer from, Integer size) {
         log.info("Публичный поиск событий: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}, sort={}, from={}, size={}",
                 text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
 
@@ -257,7 +248,7 @@ public class EventServiceImpl implements EventService {
                 textForSearch, categories, paid, rangeStart, rangeEnd, onlyAvailable, pageable);
 
         return events.stream()
-                .map(eventMapper::mapToShortDto)
+                .map(EventMapper::mapToShortDto)
                 .collect(Collectors.toList());
     }
 
@@ -273,7 +264,7 @@ public class EventServiceImpl implements EventService {
         }
 
         return requestRepository.findByEventId(eventId).stream()
-                .map(requestMapper::requestToParticipationRequestDto)
+                .map(RequestMapper::requestToParticipationRequestDto)
                 .toList();
     }
 
@@ -328,10 +319,10 @@ public class EventServiceImpl implements EventService {
             if (newStatus == RequestStatus.CONFIRMED) {
                 request.setStatus(RequestStatus.CONFIRMED);
                 confirmedCount++;
-                confirmedDtos.add(requestMapper.requestToParticipationRequestDto(request));
+                confirmedDtos.add(RequestMapper.requestToParticipationRequestDto(request));
             } else if (newStatus == RequestStatus.REJECTED) {
                 request.setStatus(RequestStatus.REJECTED);
-                rejectedDtos.add(requestMapper.requestToParticipationRequestDto(request));
+                rejectedDtos.add(RequestMapper.requestToParticipationRequestDto(request));
             } else {
                 throw new ValidationException("Неизвестный статус: " + newStatus);
             }
@@ -347,7 +338,7 @@ public class EventServiceImpl implements EventService {
                     requestRepository.findByEventIdAndStatus(eventId, RequestStatus.PENDING);
             for (Request pending : pendingRequests) {
                 pending.setStatus(RequestStatus.REJECTED);
-                rejectedDtos.add(requestMapper.requestToParticipationRequestDto(pending));
+                rejectedDtos.add(RequestMapper.requestToParticipationRequestDto(pending));
             }
             requestRepository.saveAll(pendingRequests);
         }
