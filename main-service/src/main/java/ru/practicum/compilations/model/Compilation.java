@@ -18,7 +18,6 @@ import java.util.List;
 @ToString
 public class Compilation {
 
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

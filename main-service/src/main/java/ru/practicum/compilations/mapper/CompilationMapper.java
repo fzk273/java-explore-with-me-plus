@@ -20,7 +20,6 @@ public class CompilationMapper {
 
     private final EventMapper eventMapper;
 
-
     public Compilation toEntity(NewCompilationDto newDto) {
         if (newDto == null) {
             return null;
@@ -33,7 +32,6 @@ public class CompilationMapper {
         // events игнорируем — их добавляет сервис по newDto.getEvents()
         return compilation;
     }
-
 
     public Compilation updateFromDto(UpdateCompilationDto updDto, Compilation compilation) {
         if (updDto == null || compilation == null) {

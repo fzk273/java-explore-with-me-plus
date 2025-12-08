@@ -24,10 +24,8 @@ import java.util.Set;
 @Transactional(readOnly = true)
 public class CompilationService {
 
-
     private final EventRepository eventRepository;
     private final CompilationRepository compilationRepository;
-
     private final CompilationMapper compilationMapper;
 
     @Transactional
@@ -35,11 +33,9 @@ public class CompilationService {
 
         List<Event> events = this.findEventsBy(newDto.getEvents());
 
-
         Compilation compilation = compilationMapper.toEntity(newDto);
         compilation.setEvents(events);
         compilation = compilationRepository.save(compilation);
-
 
         return compilationMapper.toDto(compilation);
     }
@@ -56,18 +52,15 @@ public class CompilationService {
         }
         compilation = compilationRepository.save(compilation);
 
-
         return compilationMapper.toDto(compilation);
     }
 
     @Transactional
     public void delete(Long compId) {
-
         compilationRepository.deleteById(compId);
     }
 
     public List<CompilationDto> getAllBy(Boolean pinned, Integer from, Integer size) {
-
         int page = from / size;
         Pageable pageable = PageRequest.of(page, size);
         Page<Compilation> compilations = pinned != null
@@ -96,6 +89,7 @@ public class CompilationService {
         if (events.size() != eventsIds.size()) {
             throw new NotFoundException("Некоторые события не найдены");
         }
+
         return events;
     }
 }

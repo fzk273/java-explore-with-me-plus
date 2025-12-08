@@ -24,7 +24,6 @@ public class EventMapper {
         this.userMapper = userMapper;
     }
 
-
     public Event mapToEvent(NewEventDto newEventDto, User user, Category category) {
         Event event = new Event();
 
@@ -45,7 +44,6 @@ public class EventMapper {
         event.setRequestModeration(newEventDto.getRequestModeration());
         event.setState(EventState.PENDING);
         event.setTitle(newEventDto.getTitle());
-        event.setViews(0L);
 
         return event;
     }
@@ -87,7 +85,6 @@ public class EventMapper {
 
         // Числовые поля - никогда не должны быть null для JSON
         fullDto.setConfirmedRequests(event.getConfirmedRequests() != null ? event.getConfirmedRequests() : 0L);
-        fullDto.setViews(event.getViews() != null ? event.getViews() : 0L);
 
         return fullDto;
     }
@@ -103,7 +100,6 @@ public class EventMapper {
         shortDto.setInitiator(userMapper.toUserShortDto(event.getInitiator()));
         shortDto.setPaid(event.getPaid() != null ? event.getPaid() : false);
         shortDto.setTitle(event.getTitle());
-        shortDto.setViews(event.getViews() != null ? event.getViews() : 0L);
 
         return shortDto;
     }
