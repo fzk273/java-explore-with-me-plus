@@ -207,57 +207,170 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventFullDto> searchForAdmin(List<Long> users, List<EventState> states, List<Long> categories,
-                                               LocalDateTime rangeStart, LocalDateTime rangeEnd, Integer from, Integer size) {
-        log.info("Поиск событий администратором: users={}, states={}, categories={}, rangeStart={}, rangeEnd={}, from={}, size={}",
-                users, states, categories, rangeStart, rangeEnd, from, size);
-
-        Pageable pageable = PageRequest.of(from / size, size, Sort.by("id").ascending());
-
-        List<EventState> eventStates = null;
-
-        if (states != null && !states.isEmpty()) {
-            eventStates = new ArrayList<>(states);
+                                             LocalDateTime rangeStart, LocalDateTime rangeEnd, Integer from, Integer size) {
+        if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
+            throw new ValidationException("Дата начала не может быть позже даты окончания");
         }
 
-        List<Event> events = eventRepository.findEventsWithFilters(users, eventStates, categories, rangeStart, rangeEnd, pageable);
+        List<Event> allEvents = eventRepository.findAll();
 
-        return events.stream()
-                .map(eventMapper::mapToFullDto)
-                .collect(Collectors.toList());
+        List<Event> filteredEvents = allEvents.stream()
+                .filter(event -> users == null || users.isEmpty() ||
+                        users.contains(event.getInitiator().getId()))
+                .filter(event -> states == null || states.isEmpty() ||
+                        states.contains(event.getState()))
+                .filter(event -> categories == null || categories.isEmpty() ||
+                        categories.contains(event.getCategory().getId()))
+                .filter(event -> rangeStart == null ||
+                        !event.getEventDate().isBefore(rangeStart))
+                .filter(event -> rangeEnd == null ||
+                        !event.getEventDate().isAfter(rangeEnd))
+                .toList();
+
+        int startIndex = Math.min(from, filteredEvents.size());
+        int endIndex = Math.min(from + size, filteredEvents.size());
+
+        if (startIndex >= endIndex) {
+            return Collections.emptyList();
+        }
+
+        List<Event> paginatedEvents = filteredEvents.subList(startIndex, endIndex);
+        Map<Long, Long> viewsMap = getEventsViews(paginatedEvents);
+        List<EventFullDto> result = new ArrayList<>();
+
+        for (Event event : paginatedEvents) {
+            EventFullDto eventFullDto = eventMapper.mapToFullDto(event);
+            eventFullDto.setViews(viewsMap.getOrDefault(event.getId(), 0L));
+            result.add(eventFullDto);
+        }
+
+        return result;
     }
+
+//    @Override
+//    public List<EventFullDto> searchForAdmin(List<Long> users, List<EventState> states, List<Long> categories,
+//                                               LocalDateTime rangeStart, LocalDateTime rangeEnd, Integer from, Integer size) {
+//        log.info("Поиск событий администратором: users={}, states={}, categories={}, rangeStart={}, rangeEnd={}, from={}, size={}",
+//                users, states, categories, rangeStart, rangeEnd, from, size);
+//
+//        Pageable pageable = PageRequest.of(from / size, size, Sort.by("id").ascending());
+//
+//        List<EventState> eventStates = null;
+//
+//        if (states != null && !states.isEmpty()) {
+//            eventStates = new ArrayList<>(states);
+//        }
+//
+//        List<Event> events = eventRepository.findEventsWithFilters(users, eventStates, categories, rangeStart, rangeEnd, pageable);
+//
+//        return events.stream()
+//                .map(eventMapper::mapToFullDto)
+//                .collect(Collectors.toList());
+//    }
 
     @Override
     public List<EventShortDto> searchForUser(String text, List<Long> categories, Boolean paid,
-                                               LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
-                                               String sort, Integer from, Integer size) {
-        log.info("Публичный поиск событий: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}, sort={}, from={}, size={}",
-                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
-
-        // Валидация дат
-        if (rangeStart != null && rangeEnd != null && rangeEnd.isBefore(rangeStart)) {
-            throw new BadRequestException("End date must be after start date");
+                                             LocalDateTime rangeStart, LocalDateTime rangeEnd,
+                                             Boolean onlyAvailable, String sort, Integer from, Integer size) {
+        if (rangeStart != null && rangeEnd != null && rangeStart.isAfter(rangeEnd)) {
+            throw new ValidationException("Дата начала не может быть позже даты окончания");
         }
 
-        Pageable pageable;
-        if ("EVENT_DATE".equalsIgnoreCase(sort)) {
-            pageable = PageRequest.of(from / size, size, Sort.by("eventDate").descending());
-        } else if ("VIEWS".equalsIgnoreCase(sort)) {
-            pageable = PageRequest.of(from / size, size, Sort.by("views").descending());
-        } else {
-            pageable = PageRequest.of(from / size, size, Sort.by("id").ascending());
+        LocalDateTime actualRangeStart = (rangeStart != null) ? rangeStart : LocalDateTime.now();
+
+        List<Event> allEvents = eventRepository.findAll();
+
+        List<Event> filteredEvents = allEvents.stream()
+                .filter(event -> event.getState() == EventState.PUBLISHED)
+                .filter(event -> text == null || text.isEmpty() ||
+                        event.getAnnotation().toLowerCase().contains(text.toLowerCase()) ||
+                        event.getDescription().toLowerCase().contains(text.toLowerCase()))
+                .filter(event -> categories == null || categories.isEmpty() ||
+                        categories.contains(event.getCategory().getId()))
+                .filter(event -> {
+                    if (paid == null) return true;
+                    Boolean eventPaid = event.getPaid();
+                    return eventPaid != null && eventPaid.equals(paid);
+                })
+                .filter(event -> !event.getEventDate().isBefore(actualRangeStart))
+                .filter(event -> rangeEnd == null || !event.getEventDate().isAfter(rangeEnd))
+                .filter(event -> {
+                    if (onlyAvailable == null || !onlyAvailable) {
+                        return true;
+                    }
+                    Long limit = event.getParticipantLimit();
+                    Long confirmed = event.getConfirmedRequests();
+                    if (limit == null || limit == 0) {
+                        return true;
+                    }
+                    if (confirmed == null) {
+                        confirmed = 0L;
+                    }
+                    return confirmed < limit;
+                })
+                .toList();
+
+        int startIndex = Math.min(from, filteredEvents.size());
+        int endIndex = Math.min(from + size, filteredEvents.size());
+
+        if (startIndex >= endIndex) {
+            return Collections.emptyList();
         }
 
-        if (rangeStart == null) {
-            rangeStart = LocalDateTime.now();
+        List<Event> paginatedEvents = filteredEvents.subList(startIndex, endIndex);
+        Map<Long, Long> viewsMap = getEventsViews(paginatedEvents);
+        List<EventShortDto> result = new ArrayList<>();
+
+        for (Event event : paginatedEvents) {
+            EventShortDto shortDto = eventMapper.mapToShortDto(event);
+            shortDto.setViews(viewsMap.getOrDefault(event.getId(), 0L));
+            result.add(shortDto);
         }
 
-        List<Event> events = eventRepository.findPublishedEventsWithFilters(
-                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, pageable);
+        if ("VIEWS".equalsIgnoreCase(sort)) {
+            result.sort((e1, e2) -> Long.compare(
+                    e2.getViews() != null ? e2.getViews() : 0L,
+                    e1.getViews() != null ? e1.getViews() : 0L
+            ));
+        } else if ("EVENT_DATE".equalsIgnoreCase(sort) || sort == null) {
+            result.sort((e1, e2) -> e1.getEventDate().compareTo(e2.getEventDate()));
+        }
 
-        return events.stream()
-                .map(eventMapper::mapToShortDto)
-                .collect(Collectors.toList());
+        return result;
     }
+
+//    @Override
+//    public List<EventShortDto> searchForUser(String text, List<Long> categories, Boolean paid,
+//                                               LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
+//                                               String sort, Integer from, Integer size) {
+//        log.info("Публичный поиск событий: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, onlyAvailable={}, sort={}, from={}, size={}",
+//                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
+//
+//        // Валидация дат
+//        if (rangeStart != null && rangeEnd != null && rangeEnd.isBefore(rangeStart)) {
+//            throw new BadRequestException("End date must be after start date");
+//        }
+//
+//        Pageable pageable;
+//        if ("EVENT_DATE".equalsIgnoreCase(sort)) {
+//            pageable = PageRequest.of(from / size, size, Sort.by("eventDate").descending());
+//        } else if ("VIEWS".equalsIgnoreCase(sort)) {
+//            pageable = PageRequest.of(from / size, size, Sort.by("views").descending());
+//        } else {
+//            pageable = PageRequest.of(from / size, size, Sort.by("id").ascending());
+//        }
+//
+//        if (rangeStart == null) {
+//            rangeStart = LocalDateTime.now();
+//        }
+//
+//        List<Event> events = eventRepository.findPublishedEventsWithFilters(
+//                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, pageable);
+//
+//        return events.stream()
+//                .map(eventMapper::mapToShortDto)
+//                .collect(Collectors.toList());
+//    }
 
     @Override
     public List<ParticipationRequestDto> getEventRequests(Long userId, Long eventId) {
