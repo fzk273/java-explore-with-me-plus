@@ -3,13 +3,15 @@ package ru.practicum.event.dao;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-//@Repository
 public interface EventRepository extends JpaRepository<Event, Long> {
 
     Optional<Event> findByIdAndInitiatorId(Long eventId, Long userId);
@@ -30,47 +32,47 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     Optional<Event> findByIdAndInitiator_Id(Long eventId, Long userId);
 
-//    @Query("""
-//            SELECT e FROM Event e
-//            LEFT JOIN FETCH e.category
-//            LEFT JOIN FETCH e.initiator
-//            WHERE
-//            (:userIds IS NULL OR e.initiator.id IN :userIds)
-//            AND (:states IS NULL OR e.state IN :states)
-//            AND (:categoryIds IS NULL OR e.category.id IN :categoryIds)
-//            AND (:rangeStart IS NULL OR e.eventDate >= :rangeStart)
-//            AND (:rangeEnd IS NULL OR e.eventDate <= :rangeEnd)
-//            """)
-//    List<Event> findEventsWithFilters(@Param("userIds") List<Long> userIds,
-//                                      @Param("states") List<EventState> states,
-//                                      @Param("categoryIds") List<Long> categoryIds,
-//                                      @Param("rangeStart") LocalDateTime rangeStart,
-//                                      @Param("rangeEnd") LocalDateTime rangeEnd,
-//                                      Pageable pageable);
+    @Query("""
+            SELECT e FROM events e
+            LEFT JOIN FETCH e.categories
+            LEFT JOIN FETCH e.users
+            WHERE
+            (:userIds IS NULL OR e.users.id IN :userIds)
+            AND (:states IS NULL OR e.state IN :states)
+            AND (:categoryIds IS NULL OR e.categories.id IN :categoryIds)
+            AND (:rangeStart IS NULL OR e.event_date >= :rangeStart)
+            AND (:rangeEnd IS NULL OR e.event_date <= :rangeEnd)
+            """)
+    List<Event> findEventsWithFilters(@Param("userIds") List<Long> userIds,
+                                      @Param("states") List<EventState> states,
+                                      @Param("categoryIds") List<Long> categoryIds,
+                                      @Param("rangeStart") LocalDateTime rangeStart,
+                                      @Param("rangeEnd") LocalDateTime rangeEnd,
+                                      Pageable pageable);
 
-//    @Query("""
-//            SELECT e FROM Event e
-//            LEFT JOIN FETCH e.category
-//            LEFT JOIN FETCH e.initiator
-//            WHERE e.state = 'PUBLISHED'
-//            AND (:text IS NULL OR LOWER(e.annotation) LIKE LOWER(CONCAT('%', :text, '%'))
-//            OR LOWER(e.description) LIKE LOWER(CONCAT('%', :text, '%')))
-//            AND (:categories IS NULL OR e.category.id IN :categories)
-//            AND (:paid IS NULL OR e.paid = :paid)
-//            AND (:rangeStart IS NULL OR e.eventDate >= :rangeStart)
-//            AND (:rangeEnd IS NULL OR e.eventDate <= :rangeEnd)
-//            AND (:onlyAvailable IS NULL OR :onlyAvailable = false OR
-//                e.participantLimit = 0 OR
-//                e.participantLimit > (
-//                  SELECT COUNT(pr) FROM ParticipationRequest pr
-//                  WHERE pr.event = e AND pr.status = 'CONFIRMED'
-//            ))
-//            """)
-//    List<Event> findPublishedEventsWithFilters(@Param("text") String text,
-//                                               @Param("categories") List<Long> categories,
-//                                               @Param("paid") Boolean paid,
-//                                               @Param("rangeStart") LocalDateTime rangeStart,
-//                                               @Param("rangeEnd") LocalDateTime rangeEnd,
-//                                               @Param("onlyAvailable") Boolean onlyAvailable,
-//                                               Pageable pageable);
+    @Query("""
+            SELECT e FROM events e
+            LEFT JOIN FETCH e.categories
+            LEFT JOIN FETCH e.users
+            WHERE e.state = 'PUBLISHED'
+            AND (:text IS NULL OR LOWER(e.annotation) LIKE LOWER(CONCAT('%', :text, '%'))
+            OR LOWER(e.description) LIKE LOWER(CONCAT('%', :text, '%')))
+            AND (:categories IS NULL OR e.categories.id IN :categories)
+            AND (:paid IS NULL OR e.paid = :paid)
+            AND (:rangeStart IS NULL OR e.event_date >= :rangeStart)
+            AND (:rangeEnd IS NULL OR e.event_date <= :rangeEnd)
+            AND (:onlyAvailable IS NULL OR :onlyAvailable = false OR
+                e.participant_limit = 0 OR
+                e.participant_limit > (
+                  SELECT COUNT(pr) FROM participation_requests pr
+                  WHERE pr.event_id = e AND pr.status = 'CONFIRMED'
+            ))
+            """)
+    List<Event> findPublishedEventsWithFilters(@Param("text") String text,
+                                               @Param("categories") List<Long> categories,
+                                               @Param("paid") Boolean paid,
+                                               @Param("rangeStart") LocalDateTime rangeStart,
+                                               @Param("rangeEnd") LocalDateTime rangeEnd,
+                                               @Param("onlyAvailable") Boolean onlyAvailable,
+                                               Pageable pageable);
 }

@@ -61,9 +61,7 @@ public class EventController {
     @GetMapping("/events/{id}")
     public EventFullDto getPublicEvent(@PathVariable("id") Long eventId,
                                        HttpServletRequest request) {
-        if (statClient != null) {
-            statClient.hit(request);
-        }
+        statClient.hit(request);
 
         return eventService.getPublicEvent(eventId);
     }
@@ -83,7 +81,6 @@ public class EventController {
                                              @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
                                              @RequestParam(defaultValue = "0") Integer from,
                                              @RequestParam(defaultValue = "10") Integer size) {
-
         return eventService.searchForAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 
@@ -98,10 +95,7 @@ public class EventController {
                                              @RequestParam(defaultValue = "0") Integer from,
                                              @RequestParam(defaultValue = "10") Integer size,
                                              HttpServletRequest request) {
-
-        if (statClient != null) {
-            statClient.hit(request);
-        }
+        statClient.hit(request);
 
         return eventService.searchForUser(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
     }
