@@ -61,7 +61,11 @@ public class UserServiceImpl implements UserService {
         if (ids == null || ids.isEmpty()) {
             users = userRepository.findAll(pageable).getContent();
         } else {
-            users = userRepository.findByIds(ids, pageable);
+            List<User> allUsers = userRepository.findAllByIdIn(ids);
+            users = allUsers.stream()
+                    .skip(pageable.getOffset())
+                    .limit(pageable.getPageSize())
+                    .collect(Collectors.toList());
         }
 
         return users.stream()

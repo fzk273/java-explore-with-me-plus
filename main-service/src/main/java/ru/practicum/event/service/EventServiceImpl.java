@@ -265,7 +265,6 @@ public class EventServiceImpl implements EventService {
                             event.getDescription().toLowerCase().contains(text.toLowerCase()))
                     .filter(event -> categories == null || categories.isEmpty() ||
                             categories.contains(event.getCategory().getId()))
-                    // защитимся от NPE на paid
                     .filter(event -> {
                         if (paid == null) return true;
                         Boolean eventPaid = event.getPaid();
@@ -311,7 +310,7 @@ public class EventServiceImpl implements EventService {
                         e2.getViews() != null ? e2.getViews() : 0L,
                         e1.getViews() != null ? e1.getViews() : 0L
                 ));
-            } else {
+            } else if ("EVENT_DATE".equalsIgnoreCase(sort) || sort == null) {
                 result.sort((e1, e2) -> e1.getEventDate().compareTo(e2.getEventDate()));
             }
 
@@ -341,7 +340,9 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public EventRequestStatusUpdateResult updateRequests(Long userId, Long eventId, EventRequestStatusUpdateRequest updateRequest) {
+    @Transactional
+    public EventRequestStatusUpdateResult updateRequests(Long userId, Long eventId,
+                                                         EventRequestStatusUpdateRequest updateRequest) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Событие с id = " + eventId + " не найдено"));
 
@@ -352,60 +353,69 @@ public class EventServiceImpl implements EventService {
         }
 
         List<Request> requests = requestRepository.findByIdIn(updateRequest.getRequestIds());
+        if (requests.isEmpty()) {
+            return new EventRequestStatusUpdateResult(); // или ValidationException
+        }
 
+        // Проверяем, что все заявки относятся к этому событию и в PENDING
         for (Request request : requests) {
             if (!request.getEvent().getId().equals(eventId)) {
                 throw new NotFoundException(
                         "Запрос с id = " + request.getId() + " не принадлежит событию с id = " + eventId
                 );
             }
+            if (request.getStatus() != RequestStatus.PENDING) {
+                throw new ConflictException("Статус можно изменить только у заявок в состоянии ожидания");
+            }
+        }
+
+        long confirmedCount = requestRepository.countRequestsByEventAndStatus(event, RequestStatus.CONFIRMED);
+        long participantLimit = event.getParticipantLimit() != null ? event.getParticipantLimit() : 0L;
+
+        RequestStatus newStatus = updateRequest.getStatus();
+
+        if (newStatus == RequestStatus.CONFIRMED
+                && participantLimit > 0
+                && confirmedCount + requests.size() > participantLimit) {
+
+            // это как раз тот случай из теста "лимит уже достигнут"
+            throw new ConflictException("Достигнут лимит участников для события");
         }
 
         EventRequestStatusUpdateResult result = new EventRequestStatusUpdateResult();
-        List<ParticipationRequestDto> confirmedRequests = new ArrayList<>();
-        List<ParticipationRequestDto> rejectedRequests = new ArrayList<>();
-        Long confirmedCount = requestRepository.countConfirmedRequestsByEventId(eventId);
+        List<ParticipationRequestDto> confirmedDtos = new ArrayList<>();
+        List<ParticipationRequestDto> rejectedDtos = new ArrayList<>();
 
         for (Request request : requests) {
-            if (request.getStatus() != RequestStatus.PENDING) {
-                throw new ConflictException("Статус можно изменить только у заявок, находящихся в состоянии ожидания");
-            }
-
-            if (updateRequest.getStatus().equals(RequestStatus.CONFIRMED)) {
-                if (event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit()) {
-                    throw new ConflictException("Достигнут лимит участников для события");
-                }
-
+            if (newStatus == RequestStatus.CONFIRMED) {
                 request.setStatus(RequestStatus.CONFIRMED);
                 confirmedCount++;
-                confirmedRequests.add(requestMapper.requestToParticipationRequestDto(request));
-                event.setConfirmedRequests(confirmedCount);
-            } else if (updateRequest.getStatus().equals(RequestStatus.REJECTED)) {
+                confirmedDtos.add(requestMapper.requestToParticipationRequestDto(request));
+            } else if (newStatus == RequestStatus.REJECTED) {
                 request.setStatus(RequestStatus.REJECTED);
-                rejectedRequests.add(requestMapper.requestToParticipationRequestDto(request));
+                rejectedDtos.add(requestMapper.requestToParticipationRequestDto(request));
+            } else {
+                throw new ValidationException("Неизвестный статус: " + newStatus);
             }
         }
 
+        event.setConfirmedRequests(confirmedCount);
         eventRepository.save(event);
         requestRepository.saveAll(requests);
 
-        if (updateRequest.getStatus().equals(RequestStatus.CONFIRMED) &&
-                event.getParticipantLimit() > 0 &&
-                confirmedCount >= event.getParticipantLimit()) {
-
-            List<Request> pendingRequests = requestRepository.findByEventIdAndStatus(eventId, RequestStatus.PENDING);
-
-            for (Request pendingRequest : pendingRequests) {
-                pendingRequest.setStatus(RequestStatus.REJECTED);
-                rejectedRequests.add(requestMapper.requestToParticipationRequestDto(pendingRequest));
+        // если после подтверждения лимит выбит — отклоняем все оставшиеся PENDING
+        if (participantLimit > 0 && confirmedCount >= participantLimit) {
+            List<Request> pendingRequests =
+                    requestRepository.findByEventIdAndStatus(eventId, RequestStatus.PENDING);
+            for (Request pending : pendingRequests) {
+                pending.setStatus(RequestStatus.REJECTED);
+                rejectedDtos.add(requestMapper.requestToParticipationRequestDto(pending));
             }
-
             requestRepository.saveAll(pendingRequests);
         }
 
-        result.setConfirmedRequests(confirmedRequests);
-        result.setRejectedRequests(rejectedRequests);
-
+        result.setConfirmedRequests(confirmedDtos);
+        result.setRejectedRequests(rejectedDtos);
         return result;
     }
 
