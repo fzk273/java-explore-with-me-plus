@@ -59,3 +59,14 @@ CREATE TABLE IF NOT EXISTS compilation_events (
     CONSTRAINT fk_ce_compilation FOREIGN KEY (compilation_id) REFERENCES compilations(id) ON DELETE CASCADE,
     CONSTRAINT fk_ce_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS comments (
+    id              BIGSERIAL PRIMARY KEY,
+    text            VARCHAR(3000) NOT NULL,
+    published_on    TIMESTAMP WITH TIME ZONE NOT NULL,
+    user_id         BIGINT NOT NULL,
+    event_id        BIGINT NOT NULL,
+    state           VARCHAR(255) NOT NULL,
+    CONSTRAINT fk_comments_users FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT fk_comments_events FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE
+);
