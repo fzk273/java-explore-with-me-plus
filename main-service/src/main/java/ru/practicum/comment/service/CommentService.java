@@ -36,15 +36,22 @@ public class CommentService implements CommentServiceInterface {
     @Override
     public CommentFullDto addComment(@Valid NewCommentDto dto, Long eventId, Long userId) {
         Optional<Event> event = eventRepository.findByIdAndInitiatorId(eventId, userId);
+
         if (event.isEmpty()) {
             log.error("there is no such event: " + eventId + " or user: " + userId);
             throw new NotFoundException("there is no such event: " + eventId + " or user: " + userId);
         }
+
+        if (!event.get().getState().equals(EventState.PUBLISHED)) {
+            throw new NotPublishEventException(String.format("Event with id %s is not published", eventId));
+        }
+
         Comment newComment = CommentMapper.toEntity(dto);
         User user = userRepository.getReferenceById(userId);
         newComment.setAuthor(user);
         newComment.setEvent(event.get());
         Comment createdComment = commentRepository.save(newComment);
+
         return CommentMapper.toFullDto(createdComment);
 
     }
@@ -135,8 +142,8 @@ public class CommentService implements CommentServiceInterface {
     public List<CommentFullDto> getAllCommentsBy(Long userId, Long eventId) {
         Optional<User> user = userRepository.findById(userId);
         if (user.isEmpty()) {
-            log.error("there is no such user: " + user);
-            throw new NotFoundException("there is no such user: " + user);
+            log.error("there is no such user: " + userId);
+            throw new NotFoundException("there is no such user: " + userId);
         }
         Optional<Event> event = eventRepository.findById(eventId);
         if (event.isEmpty()) {
