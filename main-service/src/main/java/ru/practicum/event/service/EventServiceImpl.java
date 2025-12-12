@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.category.model.Category;
 import ru.practicum.category.repository.CategoryRepository;
+import ru.practicum.comment.repository.CommentRepository;
 import ru.practicum.event.dao.EventRepository;
 import ru.practicum.event.dto.*;
 import ru.practicum.event.mapper.EventMapper;
@@ -25,7 +26,6 @@ import ru.practicum.request.repository.RequestRepository;
 import ru.practicum.statistic.StatClient;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
-
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,6 +39,7 @@ public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
+    private final CommentRepository commentRepository;
     private final StatClient statClient;
 
     @Override
@@ -156,8 +157,10 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = Collections.singletonList(event);
         Long eventViews = getEventsViews(events).getOrDefault(eventId, 0L);
+        Long commentsCount = commentRepository.countByEventId(eventId);
         EventFullDto eventFullDto = EventMapper.mapToFullDto(event);
         eventFullDto.setViews(eventViews);
+        eventFullDto.setCommentsCount(commentsCount);
 
         return eventFullDto;
     }
@@ -173,8 +176,10 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = Collections.singletonList(event);
         Long eventViews = getEventsViews(events).getOrDefault(eventId, 0L);
+        Long commentsCount = commentRepository.countByEventId(eventId);
         EventFullDto eventFullDto = EventMapper.mapToFullDto(event);
         eventFullDto.setViews(eventViews);
+        eventFullDto.setCommentsCount(commentsCount);
 
         return eventFullDto;
     }
@@ -189,9 +194,12 @@ public class EventServiceImpl implements EventService {
                 .map(EventMapper::mapToShortDto)
                 .toList();
 
-        eventShortDtos.forEach(
-                eventShortDto -> eventShortDto.setViews(viewsMap.getOrDefault(eventShortDto.getId(), 0L))
-        );
+        eventShortDtos.forEach(dto -> {
+            Long commentsCount = commentRepository.countByEventId(dto.getId());
+
+            dto.setCommentsCount(commentsCount);
+            dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
+        });
 
         return eventShortDtos;
     }

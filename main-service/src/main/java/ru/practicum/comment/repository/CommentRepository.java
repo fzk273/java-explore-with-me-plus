@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import ru.practicum.comment.model.Comment;
 import ru.practicum.comment.model.CommentState;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -21,4 +20,5 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findPublicCommentsByEventId(@Param("eventId") Long eventId,
                                               @Param("state") CommentState state);
 
+    Long countByEventId(Long eventId);
 }
