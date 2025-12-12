@@ -19,4 +19,10 @@ public class PublicCommentController {
     public List<CommentFullDto> getComments(@PathVariable Long eventId) {
         return commentService.getPublicCommentsByEvent(eventId);
     }
+
+    @GetMapping("/events/{eventId}/comments/{commentId}")
+    public CommentFullDto getCommentById(@PathVariable Long eventId, @PathVariable Long commentId) {
+        return commentService.getPublicCommentById(eventId, commentId);
+    }
+
 }
