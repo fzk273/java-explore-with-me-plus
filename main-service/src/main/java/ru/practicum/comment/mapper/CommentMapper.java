@@ -1,5 +1,6 @@
 package ru.practicum.comment.mapper;
 
+import lombok.experimental.UtilityClass;
 import ru.practicum.comment.dto.CommentFullDto;
 import ru.practicum.comment.dto.NewCommentDto;
 import ru.practicum.comment.dto.UpdCommentDto;
@@ -11,10 +12,8 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@UtilityClass
 public final class CommentMapper {
-
-    private CommentMapper() {
-    }
 
     public static Comment toEntity(NewCommentDto dto) {
         if (dto == null) {
