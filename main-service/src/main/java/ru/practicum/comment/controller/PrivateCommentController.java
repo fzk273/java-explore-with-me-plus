@@ -31,6 +31,15 @@ public class PrivateCommentController {
         return commentService.getAllCommentsBy(userId, eventId);
     }
 
+
+    @GetMapping("/users/{userId}/events/{eventId}/comments/{commentId}")
+    public CommentFullDto updateComment(@PathVariable Long userId,
+                                        @PathVariable Long eventId,
+                                        @PathVariable Long commentId
+    ) {
+        return commentService.getCommentByCommentId(userId, eventId, commentId);
+    }
+
     @PatchMapping("/users/{userId}/events/{eventId}/comments/{commentId}")
     public CommentFullDto updateComment(@PathVariable Long userId,
                                         @PathVariable Long eventId,

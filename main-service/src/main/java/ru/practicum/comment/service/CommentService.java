@@ -158,4 +158,37 @@ public class CommentService implements CommentServiceInterface {
                 .map(CommentMapper::toFullDto)
                 .toList();
     }
+
+    public CommentFullDto getCommentByCommentId(Long userId, Long eventId, Long commentId) {
+        Optional<User> user = userRepository.findById(userId);
+        if (user.isEmpty()) {
+            log.error("there is no such user: " + userId);
+            throw new NotFoundException("there is no such user: " + userId);
+        }
+        Optional<Event> event = eventRepository.findById(eventId);
+        if (event.isEmpty()) {
+            log.error("there is no such event: " + eventId);
+            throw new NotFoundException("there is no such event: " + eventId);
+        }
+        Optional<Comment> comment = commentRepository.findByIdAndAuthorIdAndEventId(commentId, userId, eventId);
+        if (comment.isEmpty()) {
+            log.error("there is no such comment with id: " + commentId);
+            throw new NotFoundException("there is no such comment with id: " + commentId);
+        }
+        return CommentMapper.toFullDto(comment.get());
+    }
+
+    public CommentFullDto getPublicCommentById(Long eventId, Long commentId) {
+        Optional<Event> event = eventRepository.findById(eventId);
+        if (event.isEmpty()) {
+            log.error("there is no such event: " + eventId);
+            throw new NotFoundException("there is no such event: " + eventId);
+        }
+        Optional<Comment> comment = commentRepository.findById(commentId);
+        if (comment.isEmpty()) {
+            log.error("there is no such comment with id: " + commentId);
+            throw new NotFoundException("there is no such comment with id: " + commentId);
+        }
+        return CommentMapper.toFullDto(comment.get());
+    }
 }
