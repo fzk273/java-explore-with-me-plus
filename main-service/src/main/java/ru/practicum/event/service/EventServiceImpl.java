@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.category.model.Category;
 import ru.practicum.category.repository.CategoryRepository;
+import ru.practicum.comment.model.CommentWithCount;
 import ru.practicum.comment.repository.CommentRepository;
 import ru.practicum.event.dao.EventRepository;
 import ru.practicum.event.dto.*;
@@ -26,6 +27,7 @@ import ru.practicum.request.repository.RequestRepository;
 import ru.practicum.statistic.StatClient;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
+
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -193,11 +195,16 @@ public class EventServiceImpl implements EventService {
         List<EventShortDto> eventShortDtos = events.stream()
                 .map(EventMapper::mapToShortDto)
                 .toList();
+        List<Long> eventIds = events.stream().map(Event::getId).toList();
+        List<CommentWithCount> commentWithCounts = commentRepository.countCommentsByEventIds(eventIds);
+        Map<Long, Long> commentsWithCountMap = commentWithCounts.stream()
+                .collect(Collectors.toMap(
+                        CommentWithCount::getCommentId,
+                        CommentWithCount::getCommentCount
+                ));
 
         eventShortDtos.forEach(dto -> {
-            Long commentsCount = commentRepository.countByEventId(dto.getId());
-
-            dto.setCommentsCount(commentsCount);
+            dto.setCommentsCount(commentsWithCountMap.get(dto.getId()));
             dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
         });
 

@@ -13,11 +13,12 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/users/{userId}/events/{eventId}/comments")
 public class PrivateCommentController {
 
     private final CommentService commentService;
 
-    @PostMapping("/users/{userId}/events/{eventId}/comments")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CommentFullDto addComment(@PathVariable Long userId,
                                      @PathVariable Long eventId,
@@ -25,14 +26,14 @@ public class PrivateCommentController {
         return commentService.addComment(dto, eventId, userId);
     }
 
-    @GetMapping("/users/{userId}/events/{eventId}/comments")
+    @GetMapping
     public List<CommentFullDto> getAllCommentsBy(@PathVariable Long userId,
                                                  @PathVariable Long eventId) {
         return commentService.getAllCommentsBy(userId, eventId);
     }
 
 
-    @GetMapping("/users/{userId}/events/{eventId}/comments/{commentId}")
+    @GetMapping("/{commentId}")
     public CommentFullDto updateComment(@PathVariable Long userId,
                                         @PathVariable Long eventId,
                                         @PathVariable Long commentId
@@ -40,7 +41,7 @@ public class PrivateCommentController {
         return commentService.getCommentByCommentId(userId, eventId, commentId);
     }
 
-    @PatchMapping("/users/{userId}/events/{eventId}/comments/{commentId}")
+    @PatchMapping("/{commentId}")
     public CommentFullDto updateComment(@PathVariable Long userId,
                                         @PathVariable Long eventId,
                                         @PathVariable Long commentId,
@@ -48,7 +49,7 @@ public class PrivateCommentController {
         return commentService.updateComment(userId, eventId, commentId, updDto);
     }
 
-    @DeleteMapping("/users/{userId}/events/{eventId}/comments/{commentId}")
+    @DeleteMapping("/{commentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteComment(@PathVariable Long userId,
                               @PathVariable Long eventId,
