@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.category.model.Category;
 import ru.practicum.category.repository.CategoryRepository;
+import ru.practicum.comment.model.CommentWithCount;
+import ru.practicum.comment.repository.CommentRepository;
 import ru.practicum.event.dao.EventRepository;
 import ru.practicum.event.dto.*;
 import ru.practicum.event.mapper.EventMapper;
@@ -39,6 +41,7 @@ public class EventServiceImpl implements EventService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final RequestRepository requestRepository;
+    private final CommentRepository commentRepository;
     private final StatClient statClient;
 
     @Override
@@ -156,8 +159,10 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = Collections.singletonList(event);
         Long eventViews = getEventsViews(events).getOrDefault(eventId, 0L);
+        Long commentsCount = commentRepository.countByEventId(eventId);
         EventFullDto eventFullDto = EventMapper.mapToFullDto(event);
         eventFullDto.setViews(eventViews);
+        eventFullDto.setCommentsCount(commentsCount);
 
         return eventFullDto;
     }
@@ -173,8 +178,10 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = Collections.singletonList(event);
         Long eventViews = getEventsViews(events).getOrDefault(eventId, 0L);
+        Long commentsCount = commentRepository.countByEventId(eventId);
         EventFullDto eventFullDto = EventMapper.mapToFullDto(event);
         eventFullDto.setViews(eventViews);
+        eventFullDto.setCommentsCount(commentsCount);
 
         return eventFullDto;
     }
@@ -188,10 +195,18 @@ public class EventServiceImpl implements EventService {
         List<EventShortDto> eventShortDtos = events.stream()
                 .map(EventMapper::mapToShortDto)
                 .toList();
+        List<Long> eventIds = events.stream().map(Event::getId).toList();
+        List<CommentWithCount> commentWithCounts = commentRepository.countCommentsByEventIds(eventIds);
+        Map<Long, Long> commentsWithCountMap = commentWithCounts.stream()
+                .collect(Collectors.toMap(
+                        CommentWithCount::getCommentId,
+                        CommentWithCount::getCommentCount
+                ));
 
-        eventShortDtos.forEach(
-                eventShortDto -> eventShortDto.setViews(viewsMap.getOrDefault(eventShortDto.getId(), 0L))
-        );
+        eventShortDtos.forEach(dto -> {
+            dto.setCommentsCount(commentsWithCountMap.get(dto.getId()));
+            dto.setViews(viewsMap.getOrDefault(dto.getId(), 0L));
+        });
 
         return eventShortDtos;
     }
